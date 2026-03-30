@@ -220,11 +220,14 @@ const SpotifyAPI = {
     },
     
     // Get recently played tracks
-    async getRecentlyPlayed(limit = 50) {
+    async getRecentlyPlayed(limit = 50, before = null) {
         const params = new URLSearchParams({
             userId: this.userId,
             limit: limit.toString()
         });
+        if (before) {
+            params.append('before', before);
+        }
         
         return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.RECENTLY_PLAYED}?${params}`);
     }

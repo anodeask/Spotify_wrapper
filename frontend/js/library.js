@@ -5,8 +5,11 @@ const Library = {
     currentLikedSongsPage: 0,
     playlistsLimit: 20,
     likedSongsLimit: 20,
-    recentlyPlayedLimit: 50,
+    recentlyPlayedLimit: 20,
+    recentlyPlayedCursor: null, // cursor for loading more recently played
+    recentlyPlayedLoading: false, // flag to prevent duplicate scroll loads
     recentlyPlayedIntervalId: null,
+    scrollHandler: null, // bound scroll handler for cleanup
     RECENTLY_PLAYED_REFRESH_INTERVAL: 60 * 1000, // 1 minute in milliseconds
     isLoaded: {
         playlists: false,
@@ -64,20 +67,27 @@ const Library = {
                 this.loadRecentlyPlayed();
             }
             this.startRecentlyPlayedAutoRefresh();
+            this.bindRecentlyPlayedScroll();
         });
 
-        // Stop auto-refresh when switching away from recently played tab
+        // Stop auto-refresh and scroll when switching away from recently played tab
         $('#playlists-tab-btn, #liked-songs-tab-btn').on('shown.bs.tab', () => {
             this.stopRecentlyPlayedAutoRefresh();
+            this.unbindRecentlyPlayedScroll();
         });
 
         // Refresh button
         $('#refresh-recently-played').on('click', () => {
             this.isLoaded.recentlyPlayed = false;
+            this.recentlyPlayedCursor = null;
+            $('#load-more-recently-played-wrapper').remove();
             this.loadRecentlyPlayed();
             // Restart the interval timer after manual refresh
             this.startRecentlyPlayedAutoRefresh();
         });
+
+        // Infinite scroll for recently played
+        this.scrollHandler = this.handleRecentlyPlayedScroll.bind(this);
 
         // Play buttons (delegated)
         $(document).on('click', '#my-playlists-list .play-playlist-btn', this.handlePlayPlaylist.bind(this));
@@ -107,21 +117,49 @@ const Library = {
         }
     },
 
+    // Bind scroll listener for infinite scroll on recently played
+    bindRecentlyPlayedScroll() {
+        $(window).on('scroll.recentlyPlayed', this.scrollHandler);
+    },
+
+    // Unbind scroll listener
+    unbindRecentlyPlayedScroll() {
+        $(window).off('scroll.recentlyPlayed');
+    },
+
+    // Scroll handler — load more when near bottom
+    handleRecentlyPlayedScroll() {
+        // Only load if: recently played tab is visible, we have a cursor, and not already loading
+        if (this.recentlyPlayedLoading || !this.recentlyPlayedCursor) return;
+        if (!$('#recently-played-content').hasClass('active')) return;
+
+        const scrollTop = $(window).scrollTop();
+        const windowHeight = $(window).height();
+        const docHeight = $(document).height();
+
+        // Trigger when within 200px of the bottom
+        if (scrollTop + windowHeight >= docHeight - 200) {
+            this.loadRecentlyPlayed(this.recentlyPlayedCursor);
+        }
+    },
+
     // Called when library tab is activated
     onTabActivated() {
         // Load playlists by default (first sub-tab)
         if (!this.isLoaded.playlists) {
             this.loadMyPlaylists();
         }
-        // Start auto-refresh if recently played tab is active
+        // Start auto-refresh and scroll if recently played tab is active
         if ($('#recently-played-tab-btn').hasClass('active')) {
             this.startRecentlyPlayedAutoRefresh();
+            this.bindRecentlyPlayedScroll();
         }
     },
 
     // Called when library tab is deactivated (user switches to another main tab)
     onTabDeactivated() {
         this.stopRecentlyPlayedAutoRefresh();
+        this.unbindRecentlyPlayedScroll();
     },
 
     // Load user's playlists
@@ -273,49 +311,78 @@ const Library = {
     },
 
     // Load recently played
-    async loadRecentlyPlayed() {
+    async loadRecentlyPlayed(before = null) {
         if (!SpotifyAPI.userId) return;
+        if (this.recentlyPlayedLoading) return;
 
         const $container = $('#recently-played-list');
+        const isLoadMore = before !== null;
+        this.recentlyPlayedLoading = true;
 
-        $container.html(`
-            <div class="col-12 text-center text-muted">
-                <div class="spinner-border text-success" role="status">
-                    <span class="visually-hidden">Loading...</span>
+        if (!isLoadMore) {
+            // Fresh load — show spinner
+            $container.html(`
+                <div class="col-12 text-center text-muted">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading recently played...</p>
                 </div>
-                <p class="mt-2">Loading recently played...</p>
-            </div>
-        `);
+            `);
+            this.recentlyPlayedCursor = null;
+            $('#load-more-recently-played-wrapper').remove();
+        } else {
+            // Show a small loading indicator at the bottom
+            $container.after(`
+                <div id="load-more-recently-played-wrapper" class="d-flex justify-content-center mt-3 mb-3">
+                    <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+                    <span class="text-muted">Loading more...</span>
+                </div>
+            `);
+        }
 
         try {
-            const response = await SpotifyAPI.getRecentlyPlayed(this.recentlyPlayedLimit);
+            const response = await SpotifyAPI.getRecentlyPlayed(this.recentlyPlayedLimit, before);
 
-            this.displayRecentlyPlayed(response, $container);
+            this.displayRecentlyPlayed(response, $container, isLoadMore);
             this.isLoaded.recentlyPlayed = true;
 
         } catch (error) {
             console.error('Error loading recently played:', error);
-            $container.html(`
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Failed to load recently played. Please try again.
+            $('#load-more-recently-played-wrapper').remove();
+            if (!isLoadMore) {
+                $container.html(`
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Failed to load recently played. Please try again.
+                        </div>
                     </div>
-                </div>
-            `);
+                `);
+            }
+        } finally {
+            this.recentlyPlayedLoading = false;
         }
     },
 
-    displayRecentlyPlayed(data, $container) {
-        $container.empty();
+    displayRecentlyPlayed(data, $container, isAppend = false) {
+        if (!isAppend) {
+            $container.empty();
+        }
+
+        // Remove existing load-more button before appending
+        $('#load-more-recently-played-wrapper').remove();
 
         if (!data.items || data.items.length === 0) {
-            $container.html(`
-                <div class="col-12 text-center text-muted">
-                    <i class="fas fa-history display-4 mb-3"></i>
-                    <p>No recently played tracks. Start listening to music!</p>
-                </div>
-            `);
+            if (!isAppend) {
+                $container.html(`
+                    <div class="col-12 text-center text-muted">
+                        <i class="fas fa-history display-4 mb-3"></i>
+                        <p>No recently played tracks. Start listening to music!</p>
+                    </div>
+                `);
+            }
+            this.recentlyPlayedCursor = null;
             return;
         }
 
@@ -344,6 +411,21 @@ const Library = {
 
             $container.append(this.templates.recentlyPlayed(templateData));
         });
+
+        // Store the cursor for next page (scroll handler will use it)
+        const beforeCursor = data.cursors?.before || null;
+        this.recentlyPlayedCursor = beforeCursor;
+
+        if (!beforeCursor || data.items.length < this.recentlyPlayedLimit) {
+            // No more data — unbind scroll and show end message
+            this.recentlyPlayedCursor = null;
+            this.unbindRecentlyPlayedScroll();
+            $container.after(`
+                <div id="load-more-recently-played-wrapper" class="text-center text-muted mt-3 mb-3">
+                    <small><i class="fas fa-check-circle me-1"></i>All caught up!</small>
+                </div>
+            `);
+        }
     },
 
     // Render pagination controls
@@ -484,6 +566,10 @@ const Library = {
         };
         this.currentPlaylistsPage = 0;
         this.currentLikedSongsPage = 0;
+        this.recentlyPlayedCursor = null;
+        this.recentlyPlayedLoading = false;
+        this.stopRecentlyPlayedAutoRefresh();
+        this.unbindRecentlyPlayedScroll();
     }
 };
 

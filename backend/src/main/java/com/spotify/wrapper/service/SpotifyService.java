@@ -536,14 +536,17 @@ public class SpotifyService {
         }
     }
     
-    public RecentlyPlayedResponse getRecentlyPlayed(String userId, int limit) throws IOException {
+    public RecentlyPlayedResponse getRecentlyPlayed(String userId, int limit, String before) throws IOException {
         long startTime = System.currentTimeMillis();
         logger.debug("=== GET RECENTLY PLAYED METHOD CALLED ===");
-        logger.debug("userId: {}, limit: {}", userId, limit);
+        logger.debug("userId: {}, limit: {}, before: {}", userId, limit, before);
         
         String accessToken = tokenService.getAccessToken(userId);
         
         String url = SPOTIFY_API_BASE_URL + "/me/player/recently-played?limit=" + limit;
+        if (before != null && !before.isEmpty()) {
+            url += "&before=" + before;
+        }
         logger.debug("Request URL: {}", url);
         
         HttpGet request = new HttpGet(url);

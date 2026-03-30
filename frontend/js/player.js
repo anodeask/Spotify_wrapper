@@ -122,6 +122,7 @@ const PlayerModule = {
             $icon.removeClass('fa-pause').addClass('fa-play');
             $btn.removeClass('btn-warning').addClass('btn-success');
         }
+       
     },
     
     // Handle play/pause button click
@@ -141,6 +142,8 @@ const PlayerModule = {
                 await SpotifyAPI.play(this.deviceId);
                 this.isPlaying = true;
             }
+            $icon.removeClass('fa-spin');
+            $icon.removeClass('fa-spinner');
             
             // Update button immediately
             this.updatePlayPauseButton();

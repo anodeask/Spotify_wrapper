@@ -69,20 +69,26 @@ cd ..
 echo "🌐 Starting frontend server..."
 cd frontend
 
-if [ ! -f "package.json" ]; then
-    echo "❌ Error: package.json not found in frontend directory!"
-    kill $BACKEND_PID $BACKEND_RUN_PID 2>/dev/null
+if [ ! -f "index.html" ]; then
+    echo "❌ Error: index.html not found in frontend directory!"
+    kill $BACKEND_RUN_PID 2>/dev/null
     exit 1
 fi
 
-# Install dependencies if node_modules doesn't exist
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installing frontend dependencies..."
-    npm install
+# Check if Python is available
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+else
+    echo "❌ Error: Python is not installed!"
+    kill $BACKEND_RUN_PID 2>/dev/null
+    exit 1
 fi
 
-# Start frontend in background
-npm start > ../frontend-startup.log 2>&1 &
+# Start frontend using Python HTTP server
+echo "   Using $PYTHON_CMD to serve frontend on port 3000..."
+$PYTHON_CMD -m http.server 3000 --bind 127.0.0.1 > ../frontend-startup.log 2>&1 &
 FRONTEND_PID=$!
 
 cd ..
@@ -119,18 +125,18 @@ echo "      - Database credentials"
 echo "      - Spotify Client ID and Secret"
 echo "   3. Add http://127.0.0.1:3000 to your Spotify app's redirect URIs"
 echo ""
-echo "� Log files:"
+echo "📋 Log files:"
 echo "   Backend:  backend/logs/backend-startup.log"
 echo "   Frontend: frontend-startup.log"
 echo ""
-echo "�🛑 To stop all services, press Ctrl+C or run: pkill -f 'spring-boot\\|live-server'"
+echo "🛑 To stop all services, press Ctrl+C or run: pkill -f 'spring-boot\\|http.server'"
 echo ""
 
 # Function to cleanup on script exit
 cleanup() {
     echo ""
     echo "🛑 Shutting down services..."
-    kill $BACKEND_PID $BACKEND_RUN_PID $FRONTEND_PID 2>/dev/null
+    kill $BACKEND_RUN_PID $FRONTEND_PID 2>/dev/null
     echo "✅ Services stopped"
     exit 0
 }

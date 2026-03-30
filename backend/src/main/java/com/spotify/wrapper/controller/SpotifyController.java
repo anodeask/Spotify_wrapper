@@ -239,11 +239,12 @@ public class SpotifyController {
     @GetMapping("/me/recently-played")
     public ResponseEntity<SpotifyService.RecentlyPlayedResponse> getRecentlyPlayed(
             @RequestParam String userId,
-            @RequestParam(defaultValue = "20") int limit) {
-        logger.info("Get recently played request - userId: {}, limit: {}", userId, limit);
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(required = false) String before) {
+        logger.info("Get recently played request - userId: {}, limit: {}, before: {}", userId, limit, before);
         
         try {
-            SpotifyService.RecentlyPlayedResponse recentlyPlayed = spotifyService.getRecentlyPlayed(userId, limit);
+            SpotifyService.RecentlyPlayedResponse recentlyPlayed = spotifyService.getRecentlyPlayed(userId, limit, before);
             logger.info("Recently played retrieved successfully for userId: {}, found {} items", 
                     userId, recentlyPlayed.getItems() != null ? recentlyPlayed.getItems().size() : 0);
             return ResponseEntity.ok(recentlyPlayed);

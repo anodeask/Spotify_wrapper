@@ -450,6 +450,10 @@ public class SearchResultDto {
         private OwnerDto owner;
         private TracksInfoDto tracks;
         
+        // Spotify API may return track count as "tracks" or "items" depending on the endpoint
+        @JsonProperty("items")
+        private TracksInfoDto itemsInfo;
+        
         // Getters and Setters
         public String getId() {
             return id;
@@ -508,11 +512,20 @@ public class SearchResultDto {
         }
         
         public TracksInfoDto getTracks() {
-            return tracks;
+            // Return tracks if set, otherwise fall back to itemsInfo (Spotify API inconsistency)
+            return tracks != null ? tracks : itemsInfo;
         }
         
         public void setTracks(TracksInfoDto tracks) {
             this.tracks = tracks;
+        }
+        
+        public TracksInfoDto getItemsInfo() {
+            return itemsInfo;
+        }
+        
+        public void setItemsInfo(TracksInfoDto itemsInfo) {
+            this.itemsInfo = itemsInfo;
         }
     }
     
