@@ -93,7 +93,10 @@
                 <!-- Sidebar -->
                 <div class="col-md-3 col-lg-2">
                     <div class="list-group">
-                        <a href="#" class="list-group-item list-group-item-action active" data-tab="search">
+                        <a href="#" class="list-group-item list-group-item-action active" data-tab="player">
+                            <i class="fas fa-play me-2"></i>Player
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" data-tab="search">
                             <i class="fas fa-search me-2"></i>Search
                         </a>
                         <a href="#" class="list-group-item list-group-item-action" data-tab="library">
@@ -102,16 +105,13 @@
                         <a href="#" class="list-group-item list-group-item-action" data-tab="devices">
                             <i class="fas fa-devices me-2"></i>Devices
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-tab="player">
-                            <i class="fas fa-play me-2"></i>Player
-                        </a>
                     </div>
                 </div>
 
                 <!-- Content Area -->
                 <div class="col-md-9 col-lg-10">
                     <!-- Search Tab -->
-                    <div id="search-tab" type="lhs_option" class="tab-content">
+                    <div id="search-tab" type="lhs_option" class="tab-content d-none">
                         <div class="row mb-4">
                             <div class="col-md-8">
                                 <div class="input-group">
@@ -231,7 +231,7 @@
             </div>
 
             <!-- Player Tab -->
-            <div id="player-tab" type="lhs_option" class="tab-content d-none">
+            <div id="player-tab" type="lhs_option" class="tab-content">
                 <h3 class="mb-4">
                     <i class="fas fa-play me-2"></i>Now Playing
                 </h3>

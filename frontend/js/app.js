@@ -1,6 +1,6 @@
 // Main application module
 const App = {
-    currentTab: 'search',
+    currentTab: 'player',
     
     // Initialize the application
     init() {
@@ -148,7 +148,7 @@ const App = {
     // Handle browser back/forward buttons
     handlePopState(event) {
         const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab') || 'search';
+        const tab = urlParams.get('tab') || 'player';
         
         if (tab !== this.currentTab) {
             this.switchTab(tab);
