@@ -154,14 +154,21 @@ const Library = {
 
     // Called when library tab is activated
     onTabActivated() {
-        // Load playlists by default (first sub-tab)
-        if (!this.isLoaded.playlists) {
-            this.loadMyPlaylists();
-        }
-        // Start auto-refresh and scroll if recently played tab is active
+        // Load the active sub-tab content
         if ($('#recently-played-tab-btn').hasClass('active')) {
+            if (!this.isLoaded.recentlyPlayed) {
+                this.loadRecentlyPlayed();
+            }
             this.startRecentlyPlayedAutoRefresh();
             this.bindRecentlyPlayedScroll();
+        } else if ($('#liked-songs-tab-btn').hasClass('active')) {
+            if (!this.isLoaded.likedSongs) {
+                this.loadLikedSongs();
+            }
+        } else if ($('#playlists-tab-btn').hasClass('active')) {
+            if (!this.isLoaded.playlists) {
+                this.loadMyPlaylists();
+            }
         }
     },
 
