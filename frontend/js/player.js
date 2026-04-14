@@ -22,6 +22,8 @@ const PlayerModule = {
         $('#prev-btn').on('click', this.handlePrevious.bind(this));
         $('#volume-slider').on('input', this.handleVolumeChange.bind(this));
         $('#progress-container').on('click', this.handleSeek.bind(this));
+        $('#progress-container').on('mousemove', this.handleSeekTooltip.bind(this));
+        $('#progress-container').on('mouseleave', () => $('#seek-tooltip').hide());
         $('.seek-btn').on('click', this.handleSeekBySeconds.bind(this));
         
         // Stop event propagation on slider to prevent issues
@@ -248,6 +250,21 @@ const PlayerModule = {
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    },
+
+    // Show tooltip with time at mouse position on progress bar
+    handleSeekTooltip(event) {
+        if (!this.currentTrack || !this.currentDurationMs) {
+            $('#seek-tooltip').hide();
+            return;
+        }
+        const $bar = $('#progress-container');
+        const offsetX = event.pageX - $bar.offset().left;
+        const barWidth = $bar.width();
+        const percent = Math.max(0, Math.min(1, offsetX / barWidth));
+        const positionMs = Math.round(percent * this.currentDurationMs);
+        const $tooltip = $('#seek-tooltip');
+        $tooltip.text(this.formatTime(positionMs)).css('left', offsetX + 'px').show();
     },
 
     // Handle seek by +/- seconds button click

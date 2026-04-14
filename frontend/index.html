@@ -247,8 +247,11 @@
                             <p id="track-artist" class="text-muted">Artist Name</p>
                             <div class="d-flex align-items-center mb-3">
                                 <span id="track-current-time" class="text-muted small me-2">0:00</span>
-                                <div id="progress-container" class="progress flex-grow-1" style="cursor: pointer; height: 8px;">
-                                    <div id="track-progress" class="progress-bar bg-success" role="progressbar"></div>
+                                <div style="position: relative; flex-grow: 1;">
+                                    <div id="seek-tooltip" style="display:none; position:absolute; top:-24px; background:#191414; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; pointer-events:none; white-space:nowrap; transform:translateX(-50%);"></div>
+                                    <div id="progress-container" class="progress" style="cursor: pointer; height: 8px;">
+                                        <div id="track-progress" class="progress-bar bg-success" role="progressbar"></div>
+                                    </div>
                                 </div>
                                 <span id="track-duration" class="text-muted small ms-2">0:00</span>
                             </div>
