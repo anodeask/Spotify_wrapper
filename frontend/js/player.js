@@ -3,6 +3,7 @@ const PlayerModule = {
     currentTrack: null,
     isPlaying: false,
     updateTimeout: null,
+    isUpdating: false,
     deviceId: null,
     keyboardHandler: null,
     keyboardShortcutsInitialized: false,
@@ -12,7 +13,6 @@ const PlayerModule = {
         this.bindEvents();
         this.initKeyboardShortcuts();
         this.startUpdateLoop();
-        this.updateCurrentTrack();
     },
     
     // Bind player control events
@@ -64,6 +64,8 @@ const PlayerModule = {
     
     // Update current track information
     async updateCurrentTrack() {
+        if (this.isUpdating) return;
+        this.isUpdating = true;
         try {
             const response = await SpotifyAPI.getCurrentTrack();
             
@@ -87,6 +89,8 @@ const PlayerModule = {
                 // Token expired, might need to re-authenticate
                 this.displayNoTrack();
             }
+        } finally {
+            this.isUpdating = false;
         }
     },
     
@@ -291,7 +295,7 @@ const PlayerModule = {
         
         try {
             await SpotifyAPI.seek(positionMs, this.deviceId);
-            setTimeout(() => this.updateCurrentTrack(), 500);
+            this.startUpdateLoop();
         } catch (error) {
             console.error('Failed to seek:', error);
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
@@ -314,7 +318,7 @@ const PlayerModule = {
         
         try {
             await SpotifyAPI.seek(positionMs, this.deviceId);
-            setTimeout(() => this.updateCurrentTrack(), 500);
+            this.startUpdateLoop();
         } catch (error) {
             console.error('Failed to seek:', error);
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
@@ -333,7 +337,7 @@ const PlayerModule = {
     
     // Force refresh current track
     refresh() {
-        this.updateCurrentTrack();
+        this.startUpdateLoop();
     },
     
     // Handle keyboard shortcuts

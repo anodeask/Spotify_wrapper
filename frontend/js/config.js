@@ -45,7 +45,7 @@ const CONFIG = {
     
     // Player configuration
     PLAYER: {
-        UPDATE_INTERVAL: 5000, // 5 seconds
+        UPDATE_INTERVAL: 10000, // 10 seconds
         VOLUME_STEP: 2
     },
     
