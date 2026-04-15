@@ -26,6 +26,7 @@ const PlayerModule = {
         $('#progress-container').on('click', this.handleSeek.bind(this));
         $('#progress-container').on('mousemove', this.handleSeekTooltip.bind(this));
         $('#progress-container').on('mouseleave', () => $('#player-tooltip').hide());
+        $('#progress-container').on('keydown', this.handleSeekKeyboard.bind(this));
         $('.seek-btn').on('click', this.handleSeekBySeconds.bind(this));
         $('#volume-up-btn').on('click', () => {
             const val = Math.min(100, parseInt($('#volume-slider').val()) + CONFIG.PLAYER.VOLUME_STEP);
@@ -113,6 +114,7 @@ const PlayerModule = {
         
         // Update progress bar and time labels
         $('#track-progress').css('width', `${progressPercent}%`);
+        $('#progress-container').attr('aria-valuenow', Math.round(progressPercent));
         $('#track-current-time').text(this.formatTime(progressMs));
         $('#track-duration').text(this.formatTime(durationMs));
         this.currentDurationMs = durationMs;
@@ -143,9 +145,11 @@ const PlayerModule = {
         if (this.isPlaying) {
             $icon.removeClass('fa-play').addClass('fa-pause');
             $btn.removeClass('btn-success').addClass('btn-warning');
+            $btn.attr('aria-label', 'Pause');
         } else {
             $icon.removeClass('fa-pause').addClass('fa-play');
             $btn.removeClass('btn-warning').addClass('btn-success');
+            $btn.attr('aria-label', 'Play');
         }
        
     },
@@ -291,6 +295,36 @@ const PlayerModule = {
         const wrapperWidth = $wrapper.width();
         const percent = Math.max(0, Math.min(100, Math.round((offsetX / wrapperWidth) * 100)));
         $('#player-tooltip').text(percent + '%').css({ left: event.pageX + 'px', top: (event.pageY - 30) + 'px' }).show();
+    },
+
+    // Handle keyboard seek on progress bar (Left/Right arrows)
+    async handleSeekKeyboard(event) {
+        if (!this.currentTrack || !this.currentDurationMs) return;
+        
+        let offsetMs = 0;
+        if (event.key === 'ArrowRight') {
+            offsetMs = 5000;
+        } else if (event.key === 'ArrowLeft') {
+            offsetMs = -5000;
+        } else {
+            return;
+        }
+        event.preventDefault();
+        
+        const currentMs = this.currentProgressMs || 0;
+        const positionMs = Math.max(0, Math.min(currentMs + offsetMs, this.currentDurationMs));
+        const percent = (positionMs / this.currentDurationMs) * 100;
+        
+        $('#track-progress').css('width', `${percent}%`);
+        $('#progress-container').attr('aria-valuenow', Math.round(percent));
+        $('#track-current-time').text(this.formatTime(positionMs));
+        
+        try {
+            await SpotifyAPI.seek(positionMs, this.deviceId);
+            this.startUpdateLoop();
+        } catch (error) {
+            console.error('Failed to seek:', error);
+        }
     },
 
     // Handle seek by +/- seconds button click

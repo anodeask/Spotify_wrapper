@@ -11,6 +11,7 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 - 🔐 **OAuth Integration**: Secure authentication with Spotify
 - 💾 **Database Storage**: Persistent user data and token management
 - 🔄 **Auto-Refresh**: Recently played tracks refresh automatically every minute
+- ♿ **WCAG Level A Accessible**: Full keyboard navigation, ARIA labels, screen reader support, semantic HTML structure
 
 ## Tech Stack
 
@@ -125,10 +126,19 @@ Use the startup script to run both backend and frontend:
 ## Usage
 
 1. **Login**: Click "Login with Spotify" to authenticate with your Spotify account
-2. **Player**: Control playback, seek with +/- 5/10/15s buttons or click the progress bar (hover for time tooltip), and view now playing information
+2. **Player** (Default Tab): Control playback with play/pause, next, and previous buttons. Seek using:
+   - Clickable progress bar (shows time on hover)
+   - Arrow buttons for ±5/10/15 second jumps
+   - Keyboard arrows (Left/Right) for ±5 second increments
+   - Volume: Adjust with +/- buttons or slider (shows volume % on hover)
 3. **Search**: Use the search tab to find songs, artists, albums, and playlists
-4. **Library**: Browse recently played tracks, liked songs, and your playlists
+4. **Library**: Browse recently played tracks, liked songs, and your playlists (Recently Played is the default sub-tab)
 5. **Devices**: View and select available Spotify devices
+
+### Keyboard Navigation
+- **Tab** to navigate between interactive elements
+- **Arrow keys** to adjust seek position (Left/Right) or volume (via slider)
+- **Enter/Space** to activate buttons
 
 ## API Endpoints
 

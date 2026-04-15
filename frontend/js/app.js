@@ -83,8 +83,8 @@ const App = {
         this.handleTabDeactivation(this.currentTab);
         
         // Update active link
-        $('[data-tab]').removeClass('active');
-        $(`[data-tab="${tab}"]`).addClass('active');
+        $('[data-tab]').removeClass('active').attr('aria-selected', 'false');
+        $(`[data-tab="${tab}"]`).addClass('active').attr('aria-selected', 'true');
         
         // Hide all elements with type="lhs_option"
 
@@ -92,6 +92,9 @@ const App = {
         
         // Show selected tab content
         $(`#${tab}-tab`).removeClass('d-none');
+        
+        // Move focus to the new tab panel
+        $(`#${tab}-tab`).attr('tabindex', '-1').focus();
         
         // Update current tab
         this.currentTab = tab;

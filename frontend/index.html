@@ -92,17 +92,17 @@
             <div class="row">
                 <!-- Sidebar -->
                 <div class="col-md-3 col-lg-2">
-                    <div class="list-group">
-                        <a href="#" class="list-group-item list-group-item-action active" data-tab="player">
+                    <div class="list-group" role="tablist" aria-label="Main navigation">
+                        <a href="#" class="list-group-item list-group-item-action active" data-tab="player" role="tab" aria-selected="true" aria-controls="player-tab">
                             <i class="fas fa-play me-2"></i>Player
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-tab="search">
+                        <a href="#" class="list-group-item list-group-item-action" data-tab="search" role="tab" aria-selected="false" aria-controls="search-tab">
                             <i class="fas fa-search me-2"></i>Search
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-tab="library">
+                        <a href="#" class="list-group-item list-group-item-action" data-tab="library" role="tab" aria-selected="false" aria-controls="library-tab">
                             <i class="fas fa-book me-2"></i>My Library
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-tab="devices">
+                        <a href="#" class="list-group-item list-group-item-action" data-tab="devices" role="tab" aria-selected="false" aria-controls="devices-tab">
                             <i class="fas fa-devices me-2"></i>Devices
                         </a>
                     </div>
@@ -111,12 +111,12 @@
                 <!-- Content Area -->
                 <div class="col-md-9 col-lg-10">
                     <!-- Search Tab -->
-                    <div id="search-tab" type="lhs_option" class="tab-content d-none">
+                    <div id="search-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="search">
                         <div class="row mb-4">
                             <div class="col-md-8">
                                 <div class="input-group">
                                     <input type="text" id="search-input" class="form-control form-control-lg" placeholder="Search for songs, artists, albums, or playlists...">
-                                    <button class="btn btn-success" type="button" id="search-btn">
+                                    <button class="btn btn-success" type="button" id="search-btn" aria-label="Search">
                                         <i class="fas fa-search"></i>
                                     </button>
                                 </div>
@@ -147,7 +147,7 @@
                     </div>
 
                     <!-- Library Tab -->
-                    <div id="library-tab" type="lhs_option" class="tab-content d-none">
+                    <div id="library-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="library">
                         <h3 class="mb-4">
                             <i class="fas fa-book me-2"></i>My Library
                         </h3>
@@ -173,7 +173,7 @@
                         
                         <div class="tab-content" id="libraryTabContent">
                             <!-- Recently Played -->
-                            <div class="tab-pane fade show active" id="recently-played-content" role="tabpanel">
+                            <div class="tab-pane fade show active" id="recently-played-content" role="tabpanel" aria-labelledby="recently-played-tab-btn">
                                 <div id="recently-played-list" class="row">
                                     <div class="col-12 text-center text-muted">
                                         <div class="spinner-grow text-success" role="status">
@@ -188,7 +188,7 @@
                             </div>
                             
                             <!-- Liked Songs -->
-                            <div class="tab-pane fade" id="liked-songs-content" role="tabpanel">
+                            <div class="tab-pane fade" id="liked-songs-content" role="tabpanel" aria-labelledby="liked-songs-tab-btn">
                                 <div id="liked-songs-list" class="row">
                                     <div class="col-12 text-center text-muted">
                                         <div class="spinner-grow text-success" role="status">
@@ -201,7 +201,7 @@
                             </div>
                             
                             <!-- My Playlists -->
-                            <div class="tab-pane fade" id="playlists-content" role="tabpanel">
+                            <div class="tab-pane fade" id="playlists-content" role="tabpanel" aria-labelledby="playlists-tab-btn">
                                 <div id="my-playlists-list" class="row">
                                     <div class="col-12 text-center text-muted">
                                         <div class="spinner-grow text-success" role="status">
@@ -215,7 +215,7 @@
                         </div>
                     </div>
 
-                     <div id="devices-tab" type="lhs_option" class="tab-content d-none">
+                     <div id="devices-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="devices">
                 <h3 class="mb-4">
                     <i class="fas fa-devices me-2"></i>Available Devices
                 </h3>
@@ -231,7 +231,7 @@
             </div>
 
             <!-- Player Tab -->
-            <div id="player-tab" type="lhs_option" class="tab-content">
+            <div id="player-tab" type="lhs_option" class="tab-content" role="tabpanel" aria-labelledby="player">
                 <h3 class="mb-4">
                     <i class="fas fa-play me-2"></i>Now Playing
                 </h3>
@@ -248,7 +248,7 @@
                             <div class="d-flex align-items-center mb-3">
                                 <span id="track-current-time" class="text-muted small me-2">0:00</span>
                                 <div style="position: relative; flex-grow: 1;">
-                                    <div id="progress-container" class="progress" style="cursor: pointer; height: 8px;">
+                                    <div id="progress-container" class="progress" style="cursor: pointer; height: 8px;" tabindex="0" role="slider" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                         <div id="track-progress" class="progress-bar bg-success" role="progressbar"></div>
                                     </div>
                                 </div>
@@ -266,13 +266,13 @@
                         <button class="btn btn-outline-secondary btn-sm seek-btn" data-seek="-5">-5s</button>
                     </div>
                     <div class="btn-group me-2" role="group">
-                        <button id="prev-btn" class="btn btn-outline-dark">
+                        <button id="prev-btn" class="btn btn-outline-dark" aria-label="Previous track">
                             <i class="fas fa-step-backward"></i>
                         </button>
-                        <button id="play-pause-btn" class="btn btn-success">
+                        <button id="play-pause-btn" class="btn btn-success" aria-label="Play">
                             <i class="fas fa-play"></i>
                         </button>
-                        <button id="next-btn" class="btn btn-outline-dark">
+                        <button id="next-btn" class="btn btn-outline-dark" aria-label="Next track">
                             <i class="fas fa-step-forward"></i>
                         </button>
                     </div>
@@ -282,13 +282,13 @@
                         <button class="btn btn-outline-secondary btn-sm seek-btn" data-seek="15">+15s</button>
                     </div>
                     <div class="d-flex align-items-center justify-content-center mt-3">
-                        <button id="volume-down-btn" class="btn btn-outline-secondary btn-sm me-2">
+                        <button id="volume-down-btn" class="btn btn-outline-secondary btn-sm me-2" aria-label="Volume down">
                             <i class="fas fa-volume-down"></i>
                         </button>
                         <div id="volume-wrapper" style="position: relative; max-width: 200px; flex-grow: 1;">
-                            <input type="range" class="form-range" id="volume-slider" min="0" max="100" value="50">
+                            <input type="range" class="form-range" id="volume-slider" min="0" max="100" value="50" aria-label="Volume">
                         </div>
-                        <button id="volume-up-btn" class="btn btn-outline-secondary btn-sm ms-2">
+                        <button id="volume-up-btn" class="btn btn-outline-secondary btn-sm ms-2" aria-label="Volume up">
                             <i class="fas fa-volume-up"></i>
                         </button>
                     </div>
