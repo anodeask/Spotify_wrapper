@@ -252,6 +252,12 @@ const Config = {
 
 ### April 16, 2026
 
+#### Combined Search: All Mode
+- Added an `All` option to the search type selector in `frontend/index.html`
+- The search UI now maps `All` to a single backend request with `type=track,album,playlist`
+- Search results are rendered in grouped sections for Songs, Albums, and Playlists using the existing result card templates
+- Existing single-type search behavior remains unchanged for track, artist, album, and playlist filters
+
 #### Keyboard Shortcut Enhancement: Shift + Arrow Seek
 - Added global keyboard seek shortcuts in `player.js` for the active Player tab:
   - `Shift + ArrowRight` seeks forward by 5 seconds

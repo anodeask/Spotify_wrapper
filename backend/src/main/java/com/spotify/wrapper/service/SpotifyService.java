@@ -76,15 +76,16 @@ public class SpotifyService {
         }
     }
     
-    public SearchResultDto search(String userId, String query, String type) throws IOException {
+    public SearchResultDto search(String userId, String query, String type, int limit) throws IOException {
         long startTime = System.currentTimeMillis();
         logger.debug("=== SEARCH METHOD CALLED ===");
-        logger.debug("userId: {}, query: {}, type: {}", userId, query, type);
+        logger.debug("userId: {}, query: {}, type: {}, limit: {}", userId, query, type, limit);
         
         String accessToken = tokenService.getAccessToken(userId);
         
         String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
-        String url = SPOTIFY_API_BASE_URL + "/search?q=" + encodedQuery + "&type=" + type;
+        int sanitizedLimit = Math.max(1, Math.min(limit, 50));
+        String url = SPOTIFY_API_BASE_URL + "/search?q=" + encodedQuery + "&type=" + type + "&limit=" + sanitizedLimit;
         logger.debug("Request URL: {}", url);
         
         HttpGet request = new HttpGet(url);

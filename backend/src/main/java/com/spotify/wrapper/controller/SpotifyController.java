@@ -25,11 +25,12 @@ public class SpotifyController {
     public ResponseEntity<SearchResultDto> search(
             @RequestParam String userId,
             @RequestParam String query,
-            @RequestParam(defaultValue = "track,playlist") String type) {
-        logger.info("Search request - userId: {}, query: '{}', type: '{}'", userId, query, type);
+            @RequestParam(defaultValue = "track,playlist") String type,
+            @RequestParam(defaultValue = "10") int limit) {
+        logger.info("Search request - userId: {}, query: '{}', type: '{}', limit: {}", userId, query, type, limit);
         
         try {
-            SearchResultDto result = spotifyService.search(userId, query, type);
+            SearchResultDto result = spotifyService.search(userId, query, type, limit);
             logger.info("Search completed successfully for userId: {}, found {} results", userId, 
                     (result.getTracks() != null && result.getTracks().getItems() != null ? result.getTracks().getItems().size() : 0) + 
                     (result.getPlaylists() != null && result.getPlaylists().getItems() != null ? result.getPlaylists().getItems().size() : 0) + 

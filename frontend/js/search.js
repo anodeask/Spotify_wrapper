@@ -87,15 +87,16 @@ const SearchModule = {
     
     // Perform the actual search
     async performSearch(query) {
-        const type = $('#search-type').val();
+        const selectedType = $('#search-type').val();
+        const apiType = selectedType === 'all' ? 'track,album,playlist' : selectedType;
         
         this.showLoading(true);
         this.clearResults();
         
         try {
-            const results = await SpotifyAPI.search(query, type);
+            const results = await SpotifyAPI.search(query, apiType);
             this.currentResults = results;
-            this.displayResults(results, type);
+            this.displayResults(results, selectedType);
         } catch (error) {
             console.error('Search failed:', error);
             this.showError(error.message || CONFIG.ERRORS.SEARCH_FAILED);
@@ -107,6 +108,13 @@ const SearchModule = {
     // Display search results using Handlebars templates
     displayResults(results, type) {
         const $resultsContainer = $('#search-results');
+
+        if (type === 'all') {
+            const html = this.buildAllResultsHtml(results);
+            $resultsContainer.html(html || this.templates.noResults());
+            return;
+        }
+
         const resultsKey = type + 's';
         
         if (!results || !results[resultsKey] || results[resultsKey].items.length === 0) {
@@ -125,6 +133,51 @@ const SearchModule = {
         });
         
         $resultsContainer.html(html);
+    },
+
+    buildAllResultsHtml(results) {
+        if (!results) {
+            return '';
+        }
+
+        const sections = [
+            this.renderResultsSection('Songs', 'track', results.tracks?.items || []),
+            this.renderResultsSection('Albums', 'album', results.albums?.items || []),
+            this.renderResultsSection('Playlists', 'playlist', results.playlists?.items || [])
+        ].filter(Boolean);
+
+        return sections.join('');
+    },
+
+    renderResultsSection(title, type, items) {
+        const validItems = items.filter(item => item != null);
+        if (validItems.length === 0) {
+            return '';
+        }
+
+        let cardsHtml = '';
+        validItems.forEach(item => {
+            const data = this.prepareTemplateData(item, type);
+            if (data) {
+                cardsHtml += this.templates[type](data);
+            }
+        });
+
+        if (!cardsHtml) {
+            return '';
+        }
+
+        return `
+            <div class="col-12 mt-2 mb-3">
+                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                    <h4 class="mb-0">${title}</h4>
+                    <span class="text-muted small">${validItems.length} result${validItems.length === 1 ? '' : 's'}</span>
+                </div>
+                <div class="row">
+                    ${cardsHtml}
+                </div>
+            </div>
+        `;
     },
     
     // Prepare data for templates based on type
@@ -169,7 +222,7 @@ const SearchModule = {
                 return {
                     id: item.id,
                     name: item.name,
-                    uri: item.id,
+                    uri: item.uri,
                     imageUrl: Utils.getImageUrl(item.images, 150),
                     owner: item.owner?.display_name || 'Unknown',
                     totalTracks: item.tracks?.total || 0

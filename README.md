@@ -132,7 +132,7 @@ Use the startup script to run both backend and frontend:
    - Keyboard: **Shift + Left/Right** for ±5 second increments (from anywhere in Player tab)
    - Keyboard (when progress bar is focused): Left/Right for ±5 second increments
    - Volume: Adjust with +/- buttons or slider (shows volume % on hover)
-3. **Search**: Use the search tab to find songs, artists, albums, and playlists
+3. **Search**: Use the search tab to find songs, artists, albums, and playlists. Select **All** to search songs, albums, and playlists together in grouped results.
 4. **Library**: Browse recently played tracks, liked songs, and your playlists (Recently Played is the default sub-tab)
 5. **Devices**: View and select available Spotify devices
 

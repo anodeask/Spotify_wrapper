@@ -39,8 +39,8 @@ const CONFIG = {
     
     // Search configuration
     SEARCH: {
-        TYPES: ['track', 'artist', 'album', 'playlist'],
-        DEFAULT_LIMIT: 20
+        TYPES: ['all', 'track', 'artist', 'album', 'playlist'],
+        DEFAULT_LIMIT: 10
     },
     
     // Player configuration
