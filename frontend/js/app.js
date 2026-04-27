@@ -91,10 +91,14 @@ const App = {
         $('[type="lhs_option"]').addClass('d-none');
         
         // Show selected tab content
-        $(`#${tab}-tab`).removeClass('d-none');
+        const tabPanel = $(`#${tab}-tab`);
+        tabPanel.removeClass('d-none');
         
-        // Move focus to the new tab panel
-        $(`#${tab}-tab`).attr('tabindex', '-1').focus();
+        // Move focus to the new tab panel without forcing the page to scroll.
+        const tabPanelElement = tabPanel.attr('tabindex', '-1').get(0);
+        if (tabPanelElement && typeof tabPanelElement.focus === 'function') {
+            tabPanelElement.focus({ preventScroll: true });
+        }
         
         // Update current tab
         this.currentTab = tab;
