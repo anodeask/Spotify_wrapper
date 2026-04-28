@@ -191,6 +191,7 @@ const SearchModule = {
                     uri: item.uri,
                     imageUrl: Utils.getImageUrl(item.album?.images, 100),
                     artists: item.artists.map(a => a.name).join(', '),
+                    artistLinks: Utils.formatArtistLinks(item.artists),
                     albumName: item.album?.name || '',
                     durationMs: item.duration_ms,
                     duration: Utils.formatTime(item.duration_ms)
@@ -214,6 +215,7 @@ const SearchModule = {
                     uri: item.uri,
                     imageUrl: Utils.getImageUrl(item.images, 150),
                     artists: item.artists.map(a => a.name).join(', '),
+                    artistLinks: Utils.formatArtistLinks(item.artists),
                     releaseYear: item.release_date ? new Date(item.release_date).getFullYear() : '',
                     totalTracks: item.total_tracks || 0
                 };

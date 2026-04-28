@@ -106,11 +106,12 @@ const PlayerModule = {
         
         const imageUrl = Utils.getImageUrl(track.album?.images, 300);
         const artists = track.artists.map(artist => artist.name).join(', ');
+        const artistLinks = Utils.formatArtistLinks(track.artists);
         
         // Update track info
         $('#track-image').attr('src', imageUrl).attr('alt', track.name);
         $('#track-name').text(track.name);
-        $('#track-artist').text(artists);
+        $('#track-artist').html(artistLinks);
         
         // Update progress bar and time labels
         $('#track-progress').css('width', `${progressPercent}%`);

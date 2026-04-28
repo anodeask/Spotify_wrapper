@@ -64,6 +64,41 @@ const CONFIG = {
 
 // Utility functions
 const Utils = {
+    escapeHtml: (value) => {
+        if (value == null) return '';
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    buildSpotifyArtistUrl: (artist) => {
+        if (!artist) return '';
+        if (artist.external_urls?.spotify) return artist.external_urls.spotify;
+        if (artist.externalUrls?.spotify) return artist.externalUrls.spotify;
+        if (artist.id) return `https://open.spotify.com/artist/${encodeURIComponent(artist.id)}`;
+        return '';
+    },
+
+    formatArtistLinks: (artists) => {
+        if (!Array.isArray(artists) || artists.length === 0) {
+            return 'Unknown Artist';
+        }
+
+        return artists.map((artist) => {
+            const name = Utils.escapeHtml(artist?.name || 'Unknown Artist');
+            const url = Utils.buildSpotifyArtistUrl(artist);
+
+            if (!url) {
+                return name;
+            }
+
+            return `<a href="${Utils.escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="link-secondary artist-link">${name}</a>`;
+        }).join(', ');
+    },
+
     // Format time in ms to mm:ss
     formatTime: (ms) => {
         const minutes = Math.floor(ms / 60000);
