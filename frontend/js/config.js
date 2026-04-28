@@ -31,6 +31,8 @@ const CONFIG = {
             PLAY_PLAYLIST: '/api/spotify/play-playlist',
             TRANSFER: '/api/spotify/transfer',
             SEEK: '/api/spotify/seek',
+            QUEUE: '/api/spotify/queue',
+            ADD_TO_QUEUE: '/api/spotify/queue/add',
             MY_PLAYLISTS: '/api/spotify/me/playlists',
             LIKED_SONGS: '/api/spotify/me/tracks',
             RECENTLY_PLAYED: '/api/spotify/me/recently-played'

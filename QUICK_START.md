@@ -91,6 +91,11 @@ npm start
 - Authorize the application
 - Start searching and playing music!
 
+### New in current build
+- Use **Add to Queue** buttons in Search and Library track cards
+- Open **Player** tab to view the **Current Queue** panel
+- Click artist names to open their Spotify profile pages
+
 ## 🔧 Troubleshooting
 
 ### Common Issues:
@@ -107,6 +112,10 @@ npm start
 - Open Spotify on your computer, phone, or web browser
 - Make sure you're logged into the same Spotify account
 - Click "Refresh" in the Devices tab
+
+**"Add to Queue" fails**
+- Make sure at least one Spotify device is active
+- Re-login if your session was created before playback scopes were updated
 
 **Port already in use**
 - Check if another application is using port 9090 or 3000

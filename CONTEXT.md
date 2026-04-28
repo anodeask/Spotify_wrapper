@@ -1,6 +1,6 @@
 # Spotify Wrapper - Project Context
 
-> **Last Updated:** April 15, 2026
+> **Last Updated:** April 28, 2026
 
 This document provides a comprehensive overview of the Spotify Wrapper project, including architecture, recent changes, and development notes.
 
@@ -85,6 +85,7 @@ spotify/
 │       │   ├── dto/
 │       │   │   ├── DevicesDto.java
 │       │   │   ├── PlaybackDto.java
+│       │   │   ├── QueueDto.java
 │       │   │   └── SearchResultDto.java
 │       │   ├── entity/
 │       │   │   └── User.java
@@ -147,11 +148,13 @@ spotify/
 |--------|----------|------------|-------------|
 | GET | `/playback` | `userId` | Get current playback state |
 | GET | `/current-track` | `userId` | Get currently playing track |
+| GET | `/queue` | `userId` | Get current playback queue |
 | POST | `/play` | `userId`, `deviceId?`, `trackUri?` | Play a track |
 | POST | `/play-playlist` | `userId`, `deviceId?`, `contextUri` | Play playlist/album |
 | POST | `/pause` | `userId`, `deviceId?` | Pause playback |
 | POST | `/next` | `userId`, `deviceId?` | Skip to next track |
 | POST | `/previous` | `userId`, `deviceId?` | Go to previous track |
+| POST | `/queue/add` | `userId`, `uri`, `deviceId?` | Add item to queue |
 | POST | `/transfer` | `userId`, `deviceId` | Transfer playback to device |
 | POST | `/volume` | `userId`, `volumePercent`, `deviceId?` | Set volume (0-100) |
 | PUT | `/seek` | `userId`, `positionMs`, `deviceId?` | Seek to position in current track |
@@ -174,12 +177,15 @@ spotify/
 - Search form handling
 - Results rendering with Handlebars templates
 - Type filtering (track, artist, album, playlist)
+- Supports `All` mode (track + album + playlist grouped sections)
+- Add-to-queue actions for track results
 
 ### `library.js`
 - **Recently Played:** Recent tracks with relative timestamps (default sub-tab)
 - **Liked Songs:** Paginated liked songs view
 - **My Playlists:** Paginated playlist view
 - Lazy loading (loads content only when tab is activated)
+- Add-to-queue actions for track cards in Liked Songs and Recently Played
 
 ### `devices.js`
 - Device list rendering
@@ -196,6 +202,7 @@ spotify/
 - Track progress display (updates every 10 seconds)
 - Now playing info
 - Duplicate call prevention (`isUpdating` guard)
+- Current Queue panel rendering and refresh support
 
 ### `spotify.js`
 - API wrapper for backend calls
@@ -249,6 +256,29 @@ const Config = {
 ---
 
 ## 📝 Recent Changes
+
+### April 28, 2026
+
+#### Queue Management + Artist Link UX
+- Added backend queue endpoints:
+  - `GET /api/spotify/queue`
+  - `POST /api/spotify/queue/add`
+- Added `QueueDto` for queue response parsing
+- Added frontend queue API methods (`getQueue`, `addToQueue`) in `spotify.js`
+- Added **Add to Queue** buttons:
+  - Search track cards
+  - Library liked songs cards
+  - Library recently played cards
+- Added **Current Queue** panel in Player tab with manual refresh button
+- Player module now refreshes queue alongside playback updates
+- Artist names are now clickable links to Spotify artist pages in Player/Search/Library track contexts
+
+#### Operational Notes
+- Queue actions require an active Spotify device
+- Existing scopes already cover queue operations:
+  - `user-read-playback-state`
+  - `user-modify-playback-state`
+- Backend restart required after queue endpoint additions
 
 ### April 16, 2026
 

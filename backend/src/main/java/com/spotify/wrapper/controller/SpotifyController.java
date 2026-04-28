@@ -2,6 +2,7 @@ package com.spotify.wrapper.controller;
 
 import com.spotify.wrapper.dto.DevicesDto;
 import com.spotify.wrapper.dto.PlaybackDto;
+import com.spotify.wrapper.dto.QueueDto;
 import com.spotify.wrapper.dto.SearchResultDto;
 import com.spotify.wrapper.service.SpotifyService;
 import org.slf4j.Logger;
@@ -213,6 +214,38 @@ public class SpotifyController {
             return ResponseEntity.ok().build();
         } catch (IOException e) {
             logger.error("Failed to seek for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/queue")
+    public ResponseEntity<QueueDto> getQueue(@RequestParam String userId) {
+        logger.info("Get queue request for userId: {}", userId);
+
+        try {
+            QueueDto queue = spotifyService.getQueue(userId);
+            logger.info("Queue retrieved successfully for userId: {}, queue size: {}",
+                    userId, queue.getQueue() != null ? queue.getQueue().size() : 0);
+            return ResponseEntity.ok(queue);
+        } catch (IOException e) {
+            logger.error("Failed to get queue for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/queue/add")
+    public ResponseEntity<Void> addToQueue(
+            @RequestParam String userId,
+            @RequestParam String uri,
+            @RequestParam(required = false) String deviceId) {
+        logger.info("Add to queue request - userId: {}, uri: {}, deviceId: {}", userId, uri, deviceId);
+
+        try {
+            spotifyService.addToQueue(userId, uri, deviceId);
+            logger.info("Add to queue command executed successfully for userId: {}", userId);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            logger.error("Failed to add to queue for userId: {}", userId, e);
             return ResponseEntity.internalServerError().build();
         }
     }

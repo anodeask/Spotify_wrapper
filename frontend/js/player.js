@@ -4,6 +4,7 @@ const PlayerModule = {
     isPlaying: false,
     updateTimeout: null,
     isUpdating: false,
+    isQueueUpdating: false,
     deviceId: null,
     keyboardHandler: null,
     keyboardShortcutsInitialized: false,
@@ -36,6 +37,7 @@ const PlayerModule = {
             const val = Math.max(0, parseInt($('#volume-slider').val()) - CONFIG.PLAYER.VOLUME_STEP);
             $('#volume-slider').val(val).trigger('input');
         });
+        $('#refresh-queue-btn').on('click', this.updateQueue.bind(this));
         
         // Stop event propagation on slider to prevent issues
         $('#volume-slider').on('mousedown touchstart', (e) => {
@@ -51,6 +53,7 @@ const PlayerModule = {
         
         const scheduleNextUpdate = async () => {
             await this.updateCurrentTrack();
+            await this.updateQueue();
             this.updateTimeout = setTimeout(scheduleNextUpdate, CONFIG.PLAYER.UPDATE_INTERVAL);
         };
         
@@ -137,6 +140,52 @@ const PlayerModule = {
         // Reset page title
         document.title = 'Spotify Wrapper';
     },
+
+    async updateQueue() {
+        if (this.isQueueUpdating) return;
+        this.isQueueUpdating = true;
+
+        try {
+            const response = await SpotifyAPI.getQueue();
+            this.displayQueue(response);
+        } catch (error) {
+            console.error('Failed to get queue:', error);
+            $('#queue-list').html(`
+                <div class="list-group-item text-muted text-center">
+                    Queue unavailable. Start playback on an active device.
+                </div>
+            `);
+        } finally {
+            this.isQueueUpdating = false;
+        }
+    },
+
+    displayQueue(queueData) {
+        const $queueList = $('#queue-list');
+        const queue = queueData?.queue || [];
+
+        if (!queue.length) {
+            $queueList.html(`
+                <div class="list-group-item text-muted text-center">
+                    Queue is empty.
+                </div>
+            `);
+            return;
+        }
+
+        const html = queue.slice(0, 10).map((track, index) => {
+            const name = Utils.escapeHtml(track?.name || 'Unknown Track');
+            const artistLinks = Utils.formatArtistLinks(track?.artists || []);
+            return `
+                <div class="list-group-item">
+                    <div class="fw-semibold">${index + 1}. ${name}</div>
+                    <div class="small text-muted">${artistLinks}</div>
+                </div>
+            `;
+        }).join('');
+
+        $queueList.html(html);
+    },
     
     // Update play/pause button state
     updatePlayPauseButton() {
@@ -180,6 +229,7 @@ const PlayerModule = {
             
             // Force update current track info
             this.updateCurrentTrack();
+            this.updateQueue();
             
         } catch (error) {
             console.error('Failed to toggle playback:', error);
@@ -205,7 +255,10 @@ const PlayerModule = {
             await SpotifyAPI.next(this.deviceId);
             
             // Force immediate update
-            setTimeout(() => this.updateCurrentTrack(), 500);
+            setTimeout(() => {
+                this.updateCurrentTrack();
+                this.updateQueue();
+            }, 500);
             
         } catch (error) {
             console.error('Failed to skip to next track:', error);
@@ -228,7 +281,10 @@ const PlayerModule = {
             await SpotifyAPI.previous(this.deviceId);
             
             // Force immediate update
-            setTimeout(() => this.updateCurrentTrack(), 500);
+            setTimeout(() => {
+                this.updateCurrentTrack();
+                this.updateQueue();
+            }, 500);
             
         } catch (error) {
             console.error('Failed to skip to previous track:', error);
@@ -394,6 +450,7 @@ const PlayerModule = {
     // Force refresh current track
     refresh() {
         this.startUpdateLoop();
+        this.updateQueue();
     },
     
     // Handle keyboard shortcuts

@@ -245,6 +245,31 @@ const SpotifyAPI = {
         }
         
         return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.RECENTLY_PLAYED}?${params}`);
+    },
+
+    // Get current queue
+    async getQueue() {
+        const params = new URLSearchParams({
+            userId: this.userId
+        });
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.QUEUE}?${params}`);
+    },
+
+    // Add track/episode URI to queue
+    async addToQueue(uri, deviceId = null) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            uri: uri
+        });
+
+        if (deviceId) {
+            params.append('deviceId', deviceId);
+        }
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.ADD_TO_QUEUE}?${params}`, {
+            method: 'POST'
+        });
     }
 };
 

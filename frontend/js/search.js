@@ -65,6 +65,7 @@ const SearchModule = {
         // Delegate events for dynamically created elements
         $('#search-results').on('click', '.play-track-btn', this.handlePlayTrack.bind(this));
         $('#search-results').on('click', '.play-playlist-btn', this.handlePlayPlaylist.bind(this));
+        $('#search-results').on('click', '.add-queue-btn', this.handleAddToQueue.bind(this));
     },
     
     // Setup debounced search
@@ -270,6 +271,33 @@ const SearchModule = {
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
         } finally {
             $btn.prop('disabled', false).html('<i class="fas fa-play me-1"></i>Play');
+        }
+    },
+
+    // Handle add-to-queue button click
+    async handleAddToQueue(e) {
+        const $btn = $(e.currentTarget);
+        const uri = $btn.data('uri');
+        const name = $btn.data('name');
+
+        if (!uri) {
+            return;
+        }
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Adding...');
+
+        try {
+            const deviceId = window.PlayerModule?.deviceId || null;
+            await SpotifyAPI.addToQueue(uri, deviceId);
+            Utils.showSuccess(`Added to queue: ${name}`);
+            if (window.PlayerModule) {
+                PlayerModule.updateQueue();
+            }
+        } catch (error) {
+            console.error('Failed to add to queue:', error);
+            Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
+        } finally {
+            $btn.prop('disabled', false).html('<i class="fas fa-list-ul me-1"></i>Add to Queue');
         }
     },
     

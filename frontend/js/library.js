@@ -102,6 +102,8 @@ const Library = {
         $(document).on('click', '#my-playlists-list .play-playlist-btn', this.handlePlayPlaylist.bind(this));
         $(document).on('click', '#liked-songs-list .play-track-btn', this.handlePlayTrack.bind(this));
         $(document).on('click', '#recently-played-list .play-track-btn', this.handlePlayTrack.bind(this));
+        $(document).on('click', '#liked-songs-list .add-queue-btn', this.handleAddToQueue.bind(this));
+        $(document).on('click', '#recently-played-list .add-queue-btn', this.handleAddToQueue.bind(this));
     },
 
     // Start auto-refresh for recently played (every 5 minutes)
@@ -598,6 +600,30 @@ const Library = {
             alert('Failed to play track. Make sure you have an active Spotify device.');
         } finally {
             $btn.prop('disabled', false).html('<i class="fas fa-play me-1"></i>Play');
+        }
+    },
+
+    async handleAddToQueue(e) {
+        const $btn = $(e.currentTarget);
+        const uri = $btn.data('uri');
+        const name = $btn.data('name');
+
+        if (!uri) return;
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const deviceId = PlayerModule.deviceId || null;
+            await SpotifyAPI.addToQueue(uri, deviceId);
+            Utils.showSuccess(`Added to queue: ${name}`);
+            if (window.PlayerModule) {
+                PlayerModule.updateQueue();
+            }
+        } catch (error) {
+            console.error('Error adding to queue:', error);
+            alert('Failed to add to queue. Make sure you have an active Spotify device.');
+        } finally {
+            $btn.prop('disabled', false).html('<i class="fas fa-list-ul me-1"></i>Add to Queue');
         }
     },
 

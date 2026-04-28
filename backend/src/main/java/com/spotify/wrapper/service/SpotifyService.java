@@ -3,6 +3,7 @@ package com.spotify.wrapper.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.wrapper.dto.DevicesDto;
 import com.spotify.wrapper.dto.PlaybackDto;
+import com.spotify.wrapper.dto.QueueDto;
 import com.spotify.wrapper.dto.SearchResultDto;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -484,6 +485,93 @@ public class SpotifyService {
             
             long endTime = System.currentTimeMillis();
             logger.info("=== SET VOLUME METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
+    public QueueDto getQueue(String userId) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== GET QUEUE METHOD CALLED ===");
+        logger.debug("userId: {}", userId);
+
+        String accessToken = tokenService.getAccessToken(userId);
+
+        String url = SPOTIFY_API_BASE_URL + "/me/player/queue";
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /me/player/queue took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 204) {
+                QueueDto emptyQueue = new QueueDto();
+                emptyQueue.setQueue(new ArrayList<>());
+                return emptyQueue;
+            }
+
+            String responseBody = EntityUtils.toString(response.getEntity());
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Get queue request failed with status {}: {}", statusCode, responseBody);
+                throw new IOException("Spotify API error: " + responseBody);
+            }
+
+            QueueDto result = objectMapper.readValue(responseBody, QueueDto.class);
+            if (result.getQueue() == null) {
+                result.setQueue(new ArrayList<>());
+            } else {
+                result.setQueue(
+                        result.getQueue().stream()
+                                .filter(Objects::nonNull)
+                                .collect(java.util.stream.Collectors.toList())
+                );
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== GET QUEUE METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+            return result;
+        }
+    }
+
+    public void addToQueue(String userId, String uri, String deviceId) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== ADD TO QUEUE METHOD CALLED ===");
+        logger.debug("userId: {}, uri: {}, deviceId: {}", userId, uri, deviceId);
+
+        String accessToken = tokenService.getAccessToken(userId);
+
+        String encodedUri = URLEncoder.encode(uri, StandardCharsets.UTF_8);
+        StringBuilder urlBuilder = new StringBuilder(SPOTIFY_API_BASE_URL)
+                .append("/me/player/queue?uri=")
+                .append(encodedUri);
+
+        if (deviceId != null && !deviceId.isEmpty()) {
+            urlBuilder.append("&device_id=")
+                    .append(URLEncoder.encode(deviceId, StandardCharsets.UTF_8));
+        }
+
+        HttpPost request = new HttpPost(urlBuilder.toString());
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /me/player/queue took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode >= 400) {
+                String responseBody = EntityUtils.toString(response.getEntity());
+                logger.error("Add to queue request failed with status {}: {}", statusCode, responseBody);
+                throw new IOException("Spotify API error: " + responseBody);
+            }
+
+            EntityUtils.consume(response.getEntity());
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== ADD TO QUEUE METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
         }
     }
     
