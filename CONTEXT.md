@@ -205,6 +205,8 @@ spotify/
 - Now playing info
 - Duplicate call prevention (`isUpdating` guard)
 - Current Queue panel rendering and refresh support
+- Queue rows rendered via Handlebars template (`queue-item-template`)
+- Queue rows include album-art thumbnails for queued tracks
 
 ### `spotify.js`
 - API wrapper for backend calls
@@ -260,6 +262,11 @@ const Config = {
 ## 📝 Recent Changes
 
 ### April 29, 2026
+
+#### Queue UI Rendering Upgrade
+- Switched queue row construction from inline string interpolation to Handlebars template rendering in `player.js`
+- Added `queue-item-template` in `frontend/index.html` for queue row markup
+- Queue list now includes album-art thumbnails for each queued track
 
 #### Queue API Contract Upgrade (id/type)
 - Updated `POST /api/spotify/queue/add` to accept either:

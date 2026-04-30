@@ -295,16 +295,24 @@
                     </div>
                 </div>
 
-                <div class="card mt-4">
-                    <div class="card-body text-start">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Current Queue</h5>
-                            <button id="refresh-queue-btn" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-sync-alt me-1"></i>Refresh Queue
+                <div class="accordion mt-4" id="player-queue-accordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="player-queue-heading">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#player-queue-collapse" aria-expanded="false" aria-controls="player-queue-collapse">
+                                <i class="fas fa-list me-2"></i>Current Queue
                             </button>
-                        </div>
-                        <div id="queue-list" class="list-group list-group-flush">
-                            <div class="list-group-item text-muted text-center">Queue is empty.</div>
+                        </h2>
+                        <div id="player-queue-collapse" class="accordion-collapse collapse" aria-labelledby="player-queue-heading" data-bs-parent="#player-queue-accordion">
+                            <div class="accordion-body text-start">
+                                <div class="d-flex justify-content-end align-items-center mb-3">
+                                    <button id="refresh-queue-btn" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-sync-alt me-1"></i>Refresh Queue
+                                    </button>
+                                </div>
+                                <div id="queue-list" class="list-group list-group-flush">
+                                    <div class="list-group-item text-muted text-center">Queue is empty.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

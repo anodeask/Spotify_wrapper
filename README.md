@@ -142,6 +142,8 @@ Use the startup script to run both backend and frontend:
    - Liked Songs and Recently Played support **Add to Queue**
 5. **Devices**: View and select available Spotify devices
 6. **Current Queue**: In Player tab, use **Current Queue** panel to view queued tracks and refresh queue state
+   - Queue items show album-art thumbnails
+   - Queue rows are rendered using Handlebars templates for consistent UI structure
 
 ### Keyboard Navigation
 - **Tab** to navigate between interactive elements
