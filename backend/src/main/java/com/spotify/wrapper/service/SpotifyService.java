@@ -216,6 +216,14 @@ public class SpotifyService {
             String responseBody = EntityUtils.toString(response.getEntity());
             EntityUtils.consume(response.getEntity());
             logger.debug("Response body: {}", responseBody);
+
+            if (statusCode >= 400) {
+                logger.error("Get current playback request failed with status {}: {}", statusCode, responseBody);
+                if (statusCode == 429) {
+                    throw new IOException("Spotify API rate limit exceeded");
+                }
+                throw new IOException("Spotify API error: " + responseBody);
+            }
             
             PlaybackDto playback = objectMapper.readValue(responseBody, PlaybackDto.class);
             long endTime = System.currentTimeMillis();
@@ -517,6 +525,9 @@ public class SpotifyService {
 
             if (statusCode >= 400) {
                 logger.error("Get queue request failed with status {}: {}", statusCode, responseBody);
+                if (statusCode == 429) {
+                    throw new IOException("Spotify API rate limit exceeded");
+                }
                 throw new IOException("Spotify API error: " + responseBody);
             }
 

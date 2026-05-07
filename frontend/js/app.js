@@ -219,6 +219,12 @@ const App = {
             Auth.handleLogout();
             return;
         }
+
+        if (jqXHR.status === 429) {
+            // Spotify rate limit
+            this.showGlobalError(CONFIG.ERRORS.RATE_LIMIT);
+            return;
+        }
         
         if (jqXHR.status === 0) {
             // Network error

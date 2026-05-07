@@ -37,6 +37,8 @@ const SpotifyAPI = {
             
             if (error.status === 401) {
                 throw new Error(CONFIG.ERRORS.UNAUTHORIZED);
+            } else if (error.status === 429) {
+                throw new Error(CONFIG.ERRORS.RATE_LIMIT);
             } else if (error.status === 0) {
                 throw new Error(CONFIG.ERRORS.NETWORK);
             } else {

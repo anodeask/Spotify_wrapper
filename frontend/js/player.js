@@ -10,6 +10,7 @@ const PlayerModule = {
     keyboardHandler: null,
     keyboardShortcutsInitialized: false,
     volumeControlEnabled: true,
+    lastQueueUpdateAt: 0,
 
     // Initialize player module
     init() {
@@ -75,7 +76,9 @@ const PlayerModule = {
         
         const scheduleNextUpdate = async () => {
             await this.updateCurrentTrack();
-            await this.updateQueue();
+            if (Date.now() - this.lastQueueUpdateAt >= CONFIG.PLAYER.QUEUE_UPDATE_INTERVAL) {
+                await this.updateQueue();
+            }
             this.updateTimeout = setTimeout(scheduleNextUpdate, CONFIG.PLAYER.UPDATE_INTERVAL);
         };
         
@@ -177,6 +180,7 @@ const PlayerModule = {
         try {
             const response = await SpotifyAPI.getQueue();
             this.displayQueue(response);
+            this.lastQueueUpdateAt = Date.now();
         } catch (error) {
             console.error('Failed to get queue:', error);
             $('#queue-list').html(`

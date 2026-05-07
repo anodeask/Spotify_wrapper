@@ -126,6 +126,19 @@ Use the startup script to run both backend and frontend:
 ./start.sh
 ```
 
+### Stop / Check Server Status
+
+Use the companion stop script to check service status or stop running servers:
+```bash
+# Check if backend and frontend are running
+./stop.sh status
+
+# Stop both backend and frontend
+./stop.sh stop
+```
+
+The script detects processes by port (9090 / 3000) and Spring Boot / Python server process patterns, then performs a graceful shutdown followed by a force-kill if any process remains.
+
 ## Usage
 
 1. **Login**: Click "Login with Spotify" to authenticate with your Spotify account
@@ -234,6 +247,7 @@ spotify/
 ├── application.properties.template
 ├── database_setup.sql
 ├── start.sh
+├── stop.sh
 └── README.md
 ```
 

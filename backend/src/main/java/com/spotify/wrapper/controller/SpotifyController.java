@@ -21,6 +21,16 @@ public class SpotifyController {
     
     @Autowired
     private SpotifyService spotifyService;
+
+    private <T> ResponseEntity<T> handleSpotifyReadFailure(String operation, String userId, IOException e) {
+        logger.error("Failed to {} for userId: {}", operation, userId, e);
+
+        if (e.getMessage() != null && e.getMessage().contains("rate limit exceeded")) {
+            return ResponseEntity.status(429).build();
+        }
+
+        return ResponseEntity.internalServerError().build();
+    }
     
     @GetMapping("/search")
     public ResponseEntity<SearchResultDto> search(
@@ -67,8 +77,7 @@ public class SpotifyController {
             logger.info("Current playback retrieved successfully for userId: {}", userId);
             return ResponseEntity.ok(playback);
         } catch (IOException e) {
-            logger.error("Failed to get current playback for userId: {}", userId, e);
-            return ResponseEntity.internalServerError().build();
+            return handleSpotifyReadFailure("get current playback", userId, e);
         }
     }
     
@@ -81,8 +90,7 @@ public class SpotifyController {
             logger.info("Current track retrieved successfully for userId: {}", userId);
             return ResponseEntity.ok(playback);
         } catch (IOException e) {
-            logger.error("Failed to get current track for userId: {}", userId, e);
-            return ResponseEntity.internalServerError().build();
+            return handleSpotifyReadFailure("get current track", userId, e);
         }
     }
     
@@ -228,8 +236,7 @@ public class SpotifyController {
                     userId, queue.getQueue() != null ? queue.getQueue().size() : 0);
             return ResponseEntity.ok(queue);
         } catch (IOException e) {
-            logger.error("Failed to get queue for userId: {}", userId, e);
-            return ResponseEntity.internalServerError().build();
+            return handleSpotifyReadFailure("get queue", userId, e);
         }
     }
 

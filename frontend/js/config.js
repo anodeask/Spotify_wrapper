@@ -48,7 +48,8 @@ const CONFIG = {
     
     // Player configuration
     PLAYER: {
-        UPDATE_INTERVAL: 10000, // 10 seconds
+        UPDATE_INTERVAL: 15000, // 15 seconds
+        QUEUE_UPDATE_INTERVAL: 30000, // 30 seconds
         VOLUME_STEP: 2
     },
     
@@ -61,6 +62,7 @@ const CONFIG = {
         UNAUTHORIZED: 'Please login to Spotify first.',
         PLAYBACK_FAILED: 'Failed to control playback. Make sure Spotify is active on a device.',
         SEARCH_FAILED: 'Search failed. Please try again.',
+        RATE_LIMIT: 'Too many requests. Please slow down and try again in a moment.',
         GENERIC: 'Something went wrong. Please try again.'
     }
 };
