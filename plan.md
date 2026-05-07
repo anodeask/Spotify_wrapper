@@ -89,6 +89,7 @@ Features:
 - Search for tracks, artists, albums, playlists
 - Library: My Playlists, Liked Songs, Recently Played
 - Device management and playback control
+- Volume controls auto-disable on devices without volume support
 - Auto-refresh for Recently Played (every 1 minute)"
 ```
 

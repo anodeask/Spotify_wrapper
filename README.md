@@ -7,6 +7,7 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 - 🎵 **Search**: Search for songs, artists, albums, and playlists
 - 📚 **Library**: View your playlists, liked songs, and recently played tracks
 - 🎮 **Playback Control**: Play, pause, skip tracks, seek with clickable progress bar, +/- 5/10/15s buttons, volume step up/down, and hover tooltips on any connected device
+- 🔇 **Smart Volume Availability**: Volume slider/buttons are automatically disabled when the current Spotify device does not support volume control
 - 🧾 **Queue Management**: Add tracks to queue from Search/Library and view current queue in Player tab
 - 🔁 **Bulk Queue Expansion**: Queue requests can accept `id` + `type` (track/album/playlist) and expand to track URIs on the backend
 - 📱 **Device Management**: View and switch between available Spotify devices
@@ -134,6 +135,7 @@ Use the startup script to run both backend and frontend:
    - Keyboard: **Shift + Left/Right** for ±5 second increments (from anywhere in Player tab)
    - Keyboard (when progress bar is focused): Left/Right for ±5 second increments
    - Volume: Adjust with +/- buttons or slider (shows volume % on hover)
+   - If the active device does not support volume control, volume controls are disabled automatically
 3. **Search**: Use the search tab to find songs, artists, albums, and playlists. Select **All** to search songs, albums, and playlists together in grouped results.
    - Artist names are clickable and open the Spotify artist page
    - Use **Add to Queue** on tracks to queue without interrupting playback
@@ -150,6 +152,7 @@ Use the startup script to run both backend and frontend:
 - **Shift + Left/Right** to seek -5/+5 seconds in Player tab
 - **Ctrl/Cmd + Left/Right** for previous/next track
 - **Ctrl/Cmd + Up/Down** to adjust volume step
+- Volume shortcuts are ignored when active device volume control is unsupported
 - **Arrow keys** to adjust seek/volume when the relevant slider control is focused
 - **Enter/Space** to activate buttons
 

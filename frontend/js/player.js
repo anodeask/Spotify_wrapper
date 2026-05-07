@@ -9,6 +9,7 @@ const PlayerModule = {
     deviceId: null,
     keyboardHandler: null,
     keyboardShortcutsInitialized: false,
+    volumeControlEnabled: true,
 
     // Initialize player module
     init() {
@@ -23,6 +24,18 @@ const PlayerModule = {
         if (queueItemTemplate) {
             this.templates.queueItem = Handlebars.compile(queueItemTemplate.innerHTML);
         }
+    },
+
+    updateVolumeControlState(device) {
+        const supportsVolume = Boolean(device && (
+            device.supports_volume === true ||
+            device.supportsVolume === true
+        ));
+
+        this.volumeControlEnabled = supportsVolume;
+        $('#volume-slider').prop('disabled', !supportsVolume);
+        $('#volume-up-btn').prop('disabled', !supportsVolume);
+        $('#volume-down-btn').prop('disabled', !supportsVolume);
     },
     
     // Bind player control events
@@ -88,10 +101,17 @@ const PlayerModule = {
                 this.currentTrack = response.item;
                 this.isPlaying = response.is_playing;
                 this.deviceId = response.device?.id || null;
+                this.updateVolumeControlState(response.device);
+                if (typeof response.device?.volume_percent === 'number') {
+                    $('#volume-slider').val(response.device.volume_percent);
+                } else if (typeof response.device?.volumePercent === 'number') {
+                    $('#volume-slider').val(response.device.volumePercent);
+                }
                 this.displayCurrentTrack(response);
             } else {
                 this.currentTrack = null;
                 this.isPlaying = false;
+                this.updateVolumeControlState(null);
                 this.displayNoTrack();
             }
             
@@ -310,6 +330,7 @@ const PlayerModule = {
     
     // Handle volume change
     handleVolumeChange() {
+        if (!this.volumeControlEnabled) return;
         const volume = $('#volume-slider').val();
         
         // Debounce volume changes to avoid too many API calls
@@ -324,6 +345,7 @@ const PlayerModule = {
     
     // Set volume level
     async setVolume(volume) {
+        if (!this.volumeControlEnabled) return;
         try {
             await SpotifyAPI.setVolume(parseInt(volume));
         } catch (error) {
@@ -504,6 +526,9 @@ const PlayerModule = {
                 break;
             case 'ArrowUp':
                 if (event.ctrlKey || event.metaKey) {
+                    if (!this.volumeControlEnabled) {
+                        return;
+                    }
                     event.preventDefault();
                     const currentVolume = parseInt($('#volume-slider').val());
                     const newVolume = Math.min(100, currentVolume + CONFIG.PLAYER.VOLUME_STEP);
@@ -512,6 +537,9 @@ const PlayerModule = {
                 break;
             case 'ArrowDown':
                 if (event.ctrlKey || event.metaKey) {
+                    if (!this.volumeControlEnabled) {
+                        return;
+                    }
                     event.preventDefault();
                     const currentVolume = parseInt($('#volume-slider').val());
                     const newVolume = Math.max(0, currentVolume - CONFIG.PLAYER.VOLUME_STEP);
