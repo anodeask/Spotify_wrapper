@@ -90,6 +90,9 @@ Features:
 - Library: My Playlists, Liked Songs, Recently Played
 - Device management and playback control
 - Volume controls auto-disable on devices without volume support
+- 429 rate-limit error handling with user-friendly frontend message
+- Playback polling every 15 seconds; queue polling every 30 seconds
+- stop.sh script to check and stop backend/frontend servers
 - Auto-refresh for Recently Played (every 1 minute)"
 ```
 
@@ -165,3 +168,17 @@ git push origin main
 2. Set up branch protection rules
 3. Create GitHub Actions for CI/CD (optional)
 4. Add badges to README (build status, etc.)
+
+---
+
+## Pre-Push Checklist: Polling & Rate Limit Validation
+
+Before pushing any change that touches polling or API call frequency, verify:
+
+- [ ] No `setInterval` / `UPDATE_INTERVAL` is set below **15 000 ms**
+- [ ] `QUEUE_UPDATE_INTERVAL` (30 s) remains ≥ `UPDATE_INTERVAL` (15 s)
+- [ ] No new polling loop duplicates an endpoint already covered by an existing loop
+- [ ] Every polling method is guarded by an `isUpdating`-style flag to prevent overlapping requests
+- [ ] Any new polling endpoint is added to `pollingEndpoints` in `app.js → handleAjaxError` for silent failure
+- [ ] Backend logs (`backend/logs/spotify-wrapper.log`) show no `429` responses during a normal session
+- [ ] Browser DevTools Network tab confirms each `/api/spotify/` endpoint fires at most once per its configured interval

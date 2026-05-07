@@ -159,6 +159,11 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 6. **Current Queue**: In Player tab, use **Current Queue** panel to view queued tracks and refresh queue state
    - Queue items show album-art thumbnails
    - Queue rows are rendered using Handlebars templates for consistent UI structure
+   - Queue is polled every 30 seconds (independent of the 15-second playback poll)
+
+### Error Handling
+- **Rate limiting (429)**: Displays a user-friendly message when the Spotify API rate limit is hit, instead of a generic error
+- **No active device**: Playback errors surface a clear prompt to open Spotify on a device
 
 ### Keyboard Navigation
 - **Tab** to navigate between interactive elements
@@ -273,6 +278,18 @@ spotify/
 - Monitor backend logs for API call details
 - Use Spotify's Web API documentation for reference
 - Test with different device types (desktop, mobile, web player)
+
+### Polling & Rate Limit Validation
+
+Spotify enforces rate limits across all API endpoints. Follow these rules when changing or adding any polling logic:
+
+1. **Minimum polling interval is 15 seconds** — never set `UPDATE_INTERVAL` or any `setInterval` below `15000 ms`.
+2. **Queue polling is decoupled** — `QUEUE_UPDATE_INTERVAL` defaults to 30 s and must not be lowered below `UPDATE_INTERVAL`.
+3. **No duplicate polling loops** — before adding a new `setInterval` or `setTimeout` loop, confirm no existing loop already covers that endpoint.
+4. **Guard against concurrent calls** — always check an `isUpdating` / `isQueueUpdating` flag before firing a new request on the same endpoint.
+5. **Silent-fail polling endpoints** — add the endpoint to `pollingEndpoints` in `app.js → handleAjaxError` so 429s on background polls do not surface global error banners.
+6. **Test with browser DevTools Network tab** — filter by `/api/spotify/` and verify each endpoint fires at most once per its configured interval.
+7. **Check backend logs for 429s** — `backend/logs/spotify-wrapper.log` logs every Spotify API status code; grep for `429` after a test session to confirm no endpoint is being over-polled.
 
 ## License
 
