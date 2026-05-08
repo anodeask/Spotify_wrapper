@@ -163,7 +163,8 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 
 ### Error Handling
 - **Rate limiting (429)**: Displays a user-friendly message when the Spotify API rate limit is hit, instead of a generic error
-- **No active device**: Playback errors surface a clear prompt to open Spotify on a device
+- **No active device (404)**: Play/pause/next/previous operations return 404 when no device is active; frontend maps this to a clear prompt to activate a Spotify device
+- **Playback commands**: Invalid requests surface clear error messages instead of generic server errors
 
 ### Keyboard Navigation
 - **Tab** to navigate between interactive elements

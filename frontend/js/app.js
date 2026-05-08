@@ -225,6 +225,27 @@ const App = {
             this.showGlobalError(CONFIG.ERRORS.RATE_LIMIT);
             return;
         }
+
+        if (jqXHR.status === 404) {
+            // Playback not available (no active device)
+            const playbackEndpoints = [
+                CONFIG.ENDPOINTS.SPOTIFY.PLAY,
+                CONFIG.ENDPOINTS.SPOTIFY.PAUSE,
+                CONFIG.ENDPOINTS.SPOTIFY.NEXT,
+                CONFIG.ENDPOINTS.SPOTIFY.PREVIOUS,
+                CONFIG.ENDPOINTS.SPOTIFY.PLAY_TRACK,
+                CONFIG.ENDPOINTS.SPOTIFY.PLAY_PLAYLIST
+            ];
+            
+            const isPlaybackRequest = playbackEndpoints.some(endpoint => 
+                ajaxSettings.url.includes(endpoint)
+            );
+            
+            if (isPlaybackRequest) {
+                this.showGlobalError(CONFIG.ERRORS.PLAYBACK_FAILED);
+                return;
+            }
+        }
         
         if (jqXHR.status === 0) {
             // Network error

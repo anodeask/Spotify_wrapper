@@ -91,6 +91,7 @@ Features:
 - Device management and playback control
 - Volume controls auto-disable on devices without volume support
 - 429 rate-limit error handling with user-friendly frontend message
+- Playback error mapping: 404 when no active device, with user-friendly frontend message
 - Playback polling every 15 seconds; queue polling every 30 seconds
 - stop.sh script to check and stop backend/frontend servers
 - Auto-refresh for Recently Played (every 1 minute)"

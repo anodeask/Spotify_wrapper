@@ -107,6 +107,12 @@ public class SpotifyController {
             return ResponseEntity.ok().build();
         } catch (IOException e) {
             logger.error("Failed to execute play command for userId: {}", userId, e);
+            
+            // Handle specific Spotify errors
+            if (e.getMessage() != null && e.getMessage().contains("No active device found")) {
+                return ResponseEntity.status(404).build();
+            }
+            
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -124,6 +130,12 @@ public class SpotifyController {
             return ResponseEntity.ok().build();
         } catch (IOException e) {
             logger.error("Failed to execute play playlist/album command for userId: {}", userId, e);
+            
+            // Handle specific Spotify errors
+            if (e.getMessage() != null && e.getMessage().contains("No active device found")) {
+                return ResponseEntity.status(404).build();
+            }
+            
             return ResponseEntity.internalServerError().build();
         }
     }
