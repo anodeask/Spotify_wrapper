@@ -165,6 +165,9 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 - **Rate limiting (429)**: Displays a user-friendly message when the Spotify API rate limit is hit, instead of a generic error
 - **No active device (404)**: Play/pause/next/previous operations return 404 when no device is active; frontend maps this to a clear prompt to activate a Spotify device
 - **Playback commands**: Invalid requests surface clear error messages instead of generic server errors
+- **Spotify API errors propagated**: Backend uses `SpotifyApiException` + `GlobalExceptionHandler` to forward Spotify's original status code and message to the client instead of returning a generic 500
+- **In-app error notifications**: All error feedback in `library.js` (play playlist, play track, add to queue) uses `Utils.showError()` instead of browser `alert()` dialogs, keeping users in context
+- **High-contrast global alerts**: Error and success banners use solid opaque backgrounds (`rgba(133,20,32,0.96)` / `rgba(19,96,53,0.96)`) with white text and a white close button so they remain clearly visible against the dark app background
 
 ### Keyboard Navigation
 - **Tab** to navigate between interactive elements

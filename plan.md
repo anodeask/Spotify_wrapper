@@ -173,6 +173,16 @@ git push origin main
 
 ---
 
+## UX & Error Handling Improvements
+
+| Area | Change |
+|------|--------|
+| Browser `alert()` removed | `handlePlayPlaylist`, `handlePlayTrack`, `handleAddToQueue` in `library.js` now call `Utils.showError()` instead of `alert()` |
+| Global alert contrast | Error/success banners use solid opaque dark-red / dark-green backgrounds with white text — visible on the dark app background |
+| Spotify API errors | `SpotifyApiException` + `GlobalExceptionHandler` propagate original Spotify status code and message to client; no more generic 500 responses |
+
+---
+
 ## Pre-Push Checklist: Polling & Rate Limit Validation
 
 Before pushing any change that touches polling or API call frequency, verify:
