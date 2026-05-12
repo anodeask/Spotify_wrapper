@@ -98,6 +98,25 @@ body {
     opacity: 1;
 }
 
+.album-track-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.35rem;
+    overflow-x: auto;
+}
+
+.album-track-actions .btn {
+    white-space: nowrap;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
 .progress-bar {
     background-color: var(--spotify-green);
 }

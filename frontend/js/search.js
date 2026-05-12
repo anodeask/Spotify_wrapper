@@ -66,6 +66,12 @@ const SearchModule = {
         $('#search-results').on('click', '.play-track-btn', this.handlePlayTrack.bind(this));
         $('#search-results').on('click', '.play-playlist-btn', this.handlePlayPlaylist.bind(this));
         $('#search-results').on('click', '.add-queue-btn', this.handleAddToQueue.bind(this));
+        $('#search-results').on('mouseenter', '.album-track-actions button', this.showActionTooltip.bind(this));
+        $('#search-results').on('mousemove', '.album-track-actions button', this.moveActionTooltip.bind(this));
+        $('#search-results').on('mouseleave', '.album-track-actions button', this.hideActionTooltip.bind(this));
+        $('#search-results').on('focus', '.album-track-actions button', this.showActionTooltip.bind(this));
+        $('#search-results').on('blur', '.album-track-actions button', this.hideActionTooltip.bind(this));
+        $('#search-results').on('click', '.album-track-actions button', this.hideActionTooltip.bind(this));
     },
     
     // Setup debounced search
@@ -84,6 +90,37 @@ const SearchModule = {
         if (query) {
             this.performSearch(query);
         }
+    },
+
+    // Show player-style floating tooltip for album action icons
+    showActionTooltip(event) {
+        const text = $(event.currentTarget).data('tooltip') || $(event.currentTarget).attr('aria-label') || '';
+        if (!text) {
+            $('#player-tooltip').hide();
+            return;
+        }
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const left = event.pageX || (window.scrollX + rect.left + rect.width / 2);
+        const top = event.pageY || (window.scrollY + rect.top);
+
+        $('#player-tooltip')
+            .text(text)
+            .css({ left: left + 'px', top: (top - 30) + 'px' })
+            .show();
+    },
+
+    // Keep tooltip following cursor similar to player controls
+    moveActionTooltip(event) {
+        if (!event.pageX || !event.pageY || !$('#player-tooltip').is(':visible')) {
+            return;
+        }
+
+        $('#player-tooltip').css({ left: event.pageX + 'px', top: (event.pageY - 30) + 'px' });
+    },
+
+    hideActionTooltip() {
+        $('#player-tooltip').hide();
     },
     
     // Perform the actual search

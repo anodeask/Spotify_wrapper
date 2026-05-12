@@ -7,6 +7,7 @@
 - Added **Tracks** action on album cards in search results.
 - Added pagination controls in detail modal for album tracks.
 - Added quick actions in detail modal: **Play**, **Add to Queue**, **Play All**.
+- Added player-style hover tooltips for album action buttons, with native title fallback.
 - Added frontend module integration:
    - `frontend/js/detail.js`
    - detail templates/modal in `frontend/index.html`
@@ -19,10 +20,12 @@
 
 ### Issues Faced During Process
 - **Detail module wiring bug**: event handlers were not firing until the module was correctly exported and initialized.
+- **Tooltip behavior mismatch**: album buttons initially used smaller text buttons and then icon-only buttons without reliable hover labels; fixed by using the same floating tooltip style as the player controls and adding a native fallback.
 - **Spotify playlist track access (403)**: repeated forbidden responses for playlist-track APIs complicated multi-source detail support.
 - **Token/consent troubleshooting overhead**: OAuth scope/consent behavior made playlist-track debugging non-deterministic.
 - **Debugging user context mismatch**: API tests with non-persisted user IDs caused misleading user-not-found/internal errors.
 - **Repeated backend restarts while testing**: required multiple restart/verification cycles before stabilizing behavior.
+- **Live browser validation**: tooltip hover behavior was verified in the running VS Code browser tab after the fix.
 
 ### Follow-Up (Optional)
 - Add a small in-app info message clarifying that detail view is currently available for albums only.

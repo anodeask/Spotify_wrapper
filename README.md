@@ -7,6 +7,7 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 - Added album detail view modal to browse album items (tracks) with pagination.
 - Added album-level **Tracks** button in search result cards.
 - Added track actions inside detail view: **Play**, **Add to Queue**, and **Play All** for album context.
+- Added player-style hover tooltips for album action buttons, with a native tooltip fallback.
 - Added frontend module `detail.js` and initialized it during dashboard load.
 - Added detail-view Handlebars row template and modal markup in `frontend/index.html`.
 - Added detail-view row hover/number styles in `frontend/css/styles.css`.
@@ -15,10 +16,12 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 ## Issues Faced During Implementation
 
 - **Module initialization issue**: detail view click handlers did not work initially because the module was not exported to `window`; fixed by exporting `DetailView` and initializing it after login.
+- **Tooltip binding issue**: album button hover labels were inconsistent until the search result handlers were wired to show a floating tooltip on hover/focus, matching the player view behavior.
 - **Playlist track API failures (403)**: Spotify playlist track fetch repeatedly returned 403 (including owned playlists), indicating token/scope/access restrictions in real usage.
 - **OAuth re-consent gap**: stale consent state made playlist scope validation difficult; forcing consent dialog helped testing, but playlist-related detail fetch was later removed per scope decision.
 - **Manual API test confusion**: requests without a valid persisted `userId` produced user-not-found/5xx behavior while debugging; confirmed frontend path works with authenticated app user context.
 - **Feature scope adjustment**: playlist detail-view patches were reverted to reduce instability; album detail view remains the supported path.
+- **Browser verification**: tooltip behavior was confirmed in the VS Code browser tab against the running app after code changes.
 
 ## Features
 

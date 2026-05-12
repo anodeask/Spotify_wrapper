@@ -396,25 +396,34 @@
                             <h6 class="card-title mb-1">{{truncate name 25}}</h6>
                             <p class="text-muted mb-1 small">{{{artistLinks}}}</p>
                             <p class="text-muted mb-2 small">{{releaseYear}} • {{totalTracks}} tracks</p>
-                            <div class="track-actions">
+                            <div class="track-actions album-track-actions">
                                 <button class="btn btn-success btn-sm play-playlist-btn" 
                                         data-uri="{{uri}}" 
-                                        data-name="{{name}}">
-                                    <i class="fas fa-play me-1"></i>Play Album
+                                        data-name="{{name}}"
+                                        title="Play Album"
+                                        data-tooltip="Play Album"
+                                        aria-label="Play Album">
+                                    <i class="fas fa-play"></i>
                                 </button>
                                 <button class="btn btn-outline-success btn-sm add-queue-btn"
                                         data-type="album"
                                     data-id="{{id}}"
-                                    data-name="{{name}}">
-                                    <i class="fas fa-list-ul me-1"></i>Add to Queue
+                                    data-name="{{name}}"
+                                        title="Add to Queue"
+                                        data-tooltip="Add to Queue"
+                                    aria-label="Add to Queue">
+                                    <i class="fas fa-list-ul"></i>
                                 </button>
                                 <button class="btn btn-outline-secondary btn-sm view-tracks-btn"
                                         data-id="{{id}}"
                                         data-type="album"
                                         data-name="{{name}}"
                                         data-image="{{imageUrl}}"
-                                        data-uri="{{uri}}">
-                                    <i class="fas fa-music me-1"></i>Tracks
+                                        data-uri="{{uri}}"
+                                        title="View Tracks"
+                                        data-tooltip="View Tracks"
+                                        aria-label="View Tracks">
+                                    <i class="fas fa-music"></i>
                                 </button>
                             </div>
                         </div>
