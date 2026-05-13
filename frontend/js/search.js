@@ -318,6 +318,7 @@ const SearchModule = {
         const name = $btn.data('name');
         const type = $btn.data('type') || 'track';
         const id = $btn.data('id');
+        const originalHtml = $btn.html();
 
         if (!uri && !id) {
             return;
@@ -327,8 +328,15 @@ const SearchModule = {
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
         try {
+            if (type === 'playlist') {
+                Utils.showError('Add to Queue is not supported for playlists.');
+                return;
+            }
+
             const deviceId = window.PlayerModule?.deviceId || null;
-            await SpotifyAPI.addToQueue({ uri, id, type }, deviceId);
+            const queueInput = id && type ? { uri, id, type } : uri;
+
+            await SpotifyAPI.addToQueue(queueInput, deviceId);
             Utils.showSuccess(`Added to queue: ${name}`);
             if (window.PlayerModule) {
                 PlayerModule.updateQueue();
@@ -337,8 +345,8 @@ const SearchModule = {
             console.error('Failed to add to queue:', error);
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
         } finally {
-            // Restore to icon-only button (no text)
-            $btn.prop('disabled', false).html('<i class="fas fa-list-ul"></i>');
+            // Restore the button label/icon as originally rendered
+            $btn.prop('disabled', false).html(originalHtml);
         }
     },
     

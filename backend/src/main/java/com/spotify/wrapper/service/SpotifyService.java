@@ -640,15 +640,22 @@ public class SpotifyService {
             throw new IOException("No queueable tracks found for id=" + id + ", type=" + type);
         }
 
+        int queuedCount = 0;
+
         for (String queueUri : uris) {
             addUriToQueue(accessToken, queueUri, deviceId);
+            queuedCount++;
         }
 
         long endTime = System.currentTimeMillis();
-        logger.info("=== ADD TO QUEUE (URI/ID-TYPE) METHOD COMPLETED in {}ms; queued {} item(s) ===", endTime - startTime, uris.size());
+        logger.info("=== ADD TO QUEUE (URI/ID-TYPE) METHOD COMPLETED in {}ms; queued {} item(s) ===", endTime - startTime, queuedCount);
     }
 
     private void addUriToQueue(String accessToken, String uri, String deviceId) throws IOException {
+        addUriToQueue(accessToken, uri, deviceId, true);
+    }
+
+    private void addUriToQueue(String accessToken, String uri, String deviceId, boolean allowRetryWithoutDevice) throws IOException {
         if (uri == null || uri.isBlank()) {
             throw new IOException("Queue URI is required");
         }
@@ -675,6 +682,14 @@ public class SpotifyService {
             if (statusCode >= 400) {
                 String responseBody = EntityUtils.toString(response.getEntity());
                 logger.error("Add to queue request failed with status {}: {}", statusCode, responseBody);
+
+                // Some active-player states reject explicit device_id, but succeed without it.
+                if (statusCode == 403 && allowRetryWithoutDevice && deviceId != null && !deviceId.isBlank()) {
+                    logger.warn("Retrying add-to-queue without device_id after 403 for uri={}", uri);
+                    addUriToQueue(accessToken, uri, null, false);
+                    return;
+                }
+
                 throwSpotifyApiError(statusCode, responseBody);
             }
 
@@ -698,10 +713,6 @@ public class SpotifyService {
             return fetchAlbumTrackUris(accessToken, encodedId);
         }
 
-        if ("playlist".equals(normalizedType)) {
-            return fetchPlaylistTrackUris(accessToken, encodedId);
-        }
-
         return Collections.emptyList();
     }
 
@@ -718,36 +729,6 @@ public class SpotifyService {
             if (items.isArray()) {
                 for (JsonNode item : items) {
                     String uri = item.path("uri").asText("");
-                    if (!uri.isBlank()) {
-                        uris.add(uri);
-                    }
-                }
-            }
-
-            String next = root.path("next").asText("");
-            if (next.isBlank()) {
-                break;
-            }
-            offset += limit;
-        }
-
-        return uris;
-    }
-
-    private List<String> fetchPlaylistTrackUris(String accessToken, String encodedPlaylistId) throws IOException {
-        List<String> uris = new ArrayList<>();
-        int offset = 0;
-        int limit = 50;
-
-        while (true) {
-            String url = SPOTIFY_API_BASE_URL + "/playlists/" + encodedPlaylistId + "/tracks?limit=" + limit + "&offset=" + offset;
-            JsonNode root = getJson(accessToken, url);
-            JsonNode items = root.path("items");
-
-            if (items.isArray()) {
-                for (JsonNode item : items) {
-                    JsonNode track = item.path("track");
-                    String uri = track.path("uri").asText("");
                     if (!uri.isBlank()) {
                         uris.add(uri);
                     }
@@ -884,27 +865,27 @@ public class SpotifyService {
         long startTime = System.currentTimeMillis();
         logger.debug("=== GET RECENTLY PLAYED METHOD CALLED ===");
         logger.debug("userId: {}, limit: {}, before: {}", userId, limit, before);
-        
+
         String accessToken = tokenService.getAccessToken(userId);
-        
+
         String url = SPOTIFY_API_BASE_URL + "/me/player/recently-played?limit=" + limit;
         if (before != null && !before.isEmpty()) {
             url += "&before=" + before;
         }
         logger.debug("Request URL: {}", url);
-        
+
         HttpGet request = new HttpGet(url);
         request.setHeader("Authorization", "Bearer " + accessToken);
-        
+
         long apiStartTime = System.currentTimeMillis();
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             long apiEndTime = System.currentTimeMillis();
             logger.info("Spotify API /me/player/recently-played took {}ms", apiEndTime - apiStartTime);
-            
+
             int statusCode = response.getStatusLine().getStatusCode();
             String responseBody = EntityUtils.toString(response.getEntity());
             EntityUtils.consume(response.getEntity());
-            
+
             logger.debug("Recently played response status: {}", statusCode);
             logger.debug("Recently played response body: {}", responseBody);
 
@@ -912,18 +893,17 @@ public class SpotifyService {
                 logger.error("Get recently played request failed with status {}: {}", statusCode, responseBody);
                 throwSpotifyApiError(statusCode, responseBody);
             }
-            
+
             RecentlyPlayedResponse result = objectMapper.readValue(responseBody, RecentlyPlayedResponse.class);
-            
-            // Filter out null items
+
             if (result.getItems() != null) {
                 result.setItems(
-                    result.getItems().stream()
-                        .filter(item -> item != null && item.getTrack() != null)
-                        .collect(java.util.stream.Collectors.toList())
+                        result.getItems().stream()
+                                .filter(item -> item != null && item.getTrack() != null)
+                                .collect(java.util.stream.Collectors.toList())
                 );
             }
-            
+
             long endTime = System.currentTimeMillis();
             logger.info("=== GET RECENTLY PLAYED METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
             return result;

@@ -603,17 +603,21 @@ const Library = {
         }
     },
 
-    async handleAddToQueue(e) {
-        const $btn = $(e.currentTarget);
-        const uri = $btn.data('uri');
-        const name = $btn.data('name');
+    async handleAddToQueue(event) {
+        const $button = $(event.currentTarget);
+        const uri = $button.data('uri');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
 
-        if (!uri) return;
+        if (!uri) {
+            console.error('No URI provided for Add to Queue');
+            return;
+        }
 
-        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
         try {
-            const deviceId = PlayerModule.deviceId || null;
+            const deviceId = window.PlayerModule?.deviceId || null;
             await SpotifyAPI.addToQueue(uri, deviceId);
             Utils.showSuccess(`Added to queue: ${name}`);
             if (window.PlayerModule) {
@@ -621,9 +625,9 @@ const Library = {
             }
         } catch (error) {
             console.error('Error adding to queue:', error);
-            Utils.showError(error.message || 'Failed to add to queue. Make sure you have an active Spotify device.');
+            Utils.showError(error.message || 'Failed to add to queue.');
         } finally {
-            $btn.prop('disabled', false).html('<i class="fas fa-list-ul me-1"></i>Add to Queue');
+            $button.prop('disabled', false).html(originalHtml);
         }
     },
 

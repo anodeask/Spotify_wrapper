@@ -248,6 +248,11 @@ public class SpotifyController {
             return ResponseEntity.badRequest().build();
         }
 
+        if (hasIdType && "playlist".equalsIgnoreCase(type)) {
+            logger.warn("Playlist add-to-queue is not supported. userId: {}, id: {}", userId, id);
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
             spotifyService.addToQueue(userId, uri, id, type, deviceId);
             logger.info("Add to queue command executed successfully for userId: {}", userId);

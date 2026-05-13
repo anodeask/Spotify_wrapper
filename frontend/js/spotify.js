@@ -270,7 +270,7 @@ const SpotifyAPI = {
         return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.QUEUE}?${params}`);
     },
 
-    // Add to queue using URI or id/type payload
+    // Add to queue using a track URI or an id/type payload (e.g., album)
     async addToQueue(queueInput, deviceId = null) {
         const params = new URLSearchParams({
             userId: this.userId
@@ -297,7 +297,8 @@ const SpotifyAPI = {
         return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.ADD_TO_QUEUE}?${params}`, {
             method: 'POST'
         });
-    }
+    },
+
 };
 
 // Export for global access
