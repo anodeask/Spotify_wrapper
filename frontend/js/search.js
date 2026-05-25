@@ -278,8 +278,9 @@ const SearchModule = {
         const $btn = $(e.currentTarget);
         const uri = $btn.data('uri');
         const name = $btn.data('name');
+        const originalHtml = $btn.html();
         
-        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Playing...');
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
         
         try {
             await SpotifyAPI.playTrack(uri);
@@ -288,7 +289,7 @@ const SearchModule = {
             console.error('Failed to play track:', error);
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
         } finally {
-            $btn.prop('disabled', false).html('<i class="fas fa-play me-1"></i>Play');
+            $btn.prop('disabled', false).html(originalHtml);
         }
     },
     
@@ -297,8 +298,9 @@ const SearchModule = {
         const $btn = $(e.currentTarget);
         const uri = $btn.data('uri');
         const name = $btn.data('name');
+        const originalHtml = $btn.html();
         
-        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Playing...');
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
         
         try {
             await SpotifyAPI.playPlaylist(uri);
@@ -307,7 +309,7 @@ const SearchModule = {
             console.error('Failed to play playlist:', error);
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
         } finally {
-            $btn.prop('disabled', false).html('<i class="fas fa-play me-1"></i>Play');
+            $btn.prop('disabled', false).html(originalHtml);
         }
     },
 

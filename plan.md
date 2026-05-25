@@ -2,6 +2,11 @@
 
 ## Implementation Update (May 2026)
 
+### UI Guardrail Update (May 2026)
+- Search, library, and related result-card play/add actions are standardized to **icon-only mode**.
+- Developer instruction added: warn the developer before planning any change that modifies icon-only mode behavior.
+- Rationale: preserves UI consistency, avoids accidental regressions to icon+text labels, and keeps accessibility review explicit.
+
 ### Delivered
 - Added album detail view to display album items (tracks) in a modal.
 - Added **Tracks** action on album cards in search results.

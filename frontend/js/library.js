@@ -558,6 +558,7 @@ const Library = {
         const $btn = $(e.currentTarget);
         const uri = $btn.data('uri');
         const name = $btn.data('name');
+        const originalHtml = $btn.html();
 
         if (!uri) return;
 
@@ -574,7 +575,7 @@ const Library = {
             console.error('Error playing playlist:', error);
             Utils.showError(error.message || 'Failed to play playlist. Make sure you have an active Spotify device.');
         } finally {
-            $btn.prop('disabled', false).html('<i class="fas fa-play me-1"></i>Play');
+            $btn.prop('disabled', false).html(originalHtml);
         }
     },
 
@@ -583,6 +584,7 @@ const Library = {
         const $btn = $(e.currentTarget);
         const uri = $btn.data('uri');
         const name = $btn.data('name');
+        const originalHtml = $btn.html();
 
         if (!uri) return;
 
@@ -599,7 +601,7 @@ const Library = {
             console.error('Error playing track:', error);
             Utils.showError(error.message || 'Failed to play track. Make sure you have an active Spotify device.');
         } finally {
-            $btn.prop('disabled', false).html('<i class="fas fa-play me-1"></i>Play');
+            $btn.prop('disabled', false).html(originalHtml);
         }
     },
 

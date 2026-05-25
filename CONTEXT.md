@@ -1,6 +1,6 @@
 # Spotify Wrapper - Project Context
 
-> **Last Updated:** April 29, 2026
+> **Last Updated:** May 25, 2026
 
 This document provides a comprehensive overview of the Spotify Wrapper project, including architecture, recent changes, and development notes.
 
@@ -260,6 +260,17 @@ const Config = {
 ---
 
 ## 📝 Recent Changes
+
+### May 25, 2026
+
+#### Icon-Only Action Buttons Standardization
+- Search and library result-card actions for Play and Add to Queue were aligned to icon-only mode.
+- Click handlers were updated to preserve original icon-only markup after async loading states.
+- Removed behavior that reverted button labels to icon + text after action completion.
+
+#### Developer Workflow Instruction
+- Before planning any change that modifies icon-only mode behavior, first warn the developer and confirm intent.
+- This warning requirement applies to UI changes that switch between icon-only and icon+text states.
 
 ### April 29, 2026
 
@@ -564,6 +575,9 @@ curl "http://localhost:9090/api/spotify/me/recently-played?userId=<userId>&limit
 - `SpotifyController.java` - REST endpoints
 - `library.js` - Library frontend module
 - `app.js` - Main application logic
+
+### UI Change Guardrail
+- If a task may alter icon-only mode for action buttons (Play/Add to Queue), provide an explicit warning to the developer before drafting or updating implementation plans.
 
 ---
 
