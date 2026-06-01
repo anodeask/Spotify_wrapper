@@ -60,8 +60,9 @@ fi
 echo "   Starting Spring Boot server..."
 
 # Start backend server using full plugin path (more reliable)
-mvn -f pom.xml org.springframework.boot:spring-boot-maven-plugin:run -DskipTests > ../backend/logs/backend-startup.log 2>&1 &
+nohup mvn -f pom.xml org.springframework.boot:spring-boot-maven-plugin:run -DskipTests > ../backend/logs/backend-startup.log 2>&1 &
 BACKEND_RUN_PID=$!
+disown $BACKEND_RUN_PID
 
 cd ..
 
@@ -88,8 +89,9 @@ fi
 
 # Start frontend using Python HTTP server
 echo "   Using $PYTHON_CMD to serve frontend on port 3000..."
-$PYTHON_CMD -m http.server 3000 --bind 127.0.0.1 > ../frontend-startup.log 2>&1 &
+nohup $PYTHON_CMD -m http.server 3000 --bind 127.0.0.1 > ../frontend-startup.log 2>&1 &
 FRONTEND_PID=$!
+disown $FRONTEND_PID
 
 cd ..
 
@@ -129,21 +131,11 @@ echo "📋 Log files:"
 echo "   Backend:  backend/logs/backend-startup.log"
 echo "   Frontend: frontend-startup.log"
 echo ""
-echo "🛑 To stop all services, press Ctrl+C or run: pkill -f 'spring-boot\\|http.server'"
+echo "🛑 To stop all services, run: ./stop.sh"
 echo ""
 
-# Function to cleanup on script exit
-cleanup() {
-    echo ""
-    echo "🛑 Shutting down services..."
-    kill $BACKEND_RUN_PID $FRONTEND_PID 2>/dev/null
-    echo "✅ Services stopped"
-    exit 0
-}
+# Save PIDs for stop.sh
+echo "$BACKEND_RUN_PID" > .backend.pid
+echo "$FRONTEND_PID" > .frontend.pid
 
-# Set trap to cleanup on script exit
-trap cleanup INT TERM
-
-# Wait for user to stop the script
-echo "✅ Application is running! Press Ctrl+C to stop all services."
-wait
+echo "✅ Services launched in background (backend PID: $BACKEND_RUN_PID, frontend PID: $FRONTEND_PID)"

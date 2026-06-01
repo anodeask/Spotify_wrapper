@@ -25,6 +25,7 @@ const DetailView = {
     bindEvents() {
         // Play button inside the modal (delegated)
         $(document).on('click', '#detail-track-list .play-track-btn', this.handlePlayTrack.bind(this));
+        $(document).on('click', '#detail-track-list .save-liked-btn', this.handleSaveLikedSong.bind(this));
         $(document).on('click', '#detail-track-list .add-queue-btn', this.handleAddToQueue.bind(this));
 
         // Pagination
@@ -134,6 +135,7 @@ const DetailView = {
             const trackNum = this.currentOffset + index + 1;
             const html = this.templates.trackRow({
                 number: trackNum,
+                id: track.id,
                 name: track.name,
                 artists: track.artists && track.artists.length > 0
                     ? track.artists.map(a => a.name).join(', ')
@@ -176,6 +178,34 @@ const DetailView = {
         }
 
         window.PlayerModule?.playTrack(uri, name);
+    },
+
+    async handleSaveLikedSong(e) {
+        const $btn = $(e.currentTarget);
+        const trackId = $btn.data('id');
+        const name = $btn.data('name');
+        const originalHtml = $btn.html();
+
+        if (!trackId) {
+            alert('Track id is not available');
+            return;
+        }
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.saveLikedSongs(trackId);
+            if (window.Utils?.showSuccess) {
+                Utils.showSuccess(response?.message || `Saved to Liked Songs: ${name}`);
+            }
+        } catch (error) {
+            console.error('Error saving liked song:', error);
+            if (window.Utils?.showError) {
+                Utils.showError(error.message || 'Failed to save to liked songs.');
+            }
+        } finally {
+            $btn.prop('disabled', false).html(originalHtml);
+        }
     },
 
     async handleAddToQueue(e) {

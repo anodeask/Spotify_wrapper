@@ -92,10 +92,26 @@ body {
 .track-actions {
     opacity: 0;
     transition: opacity 0.2s;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .search-result-card:hover .track-actions {
     opacity: 1;
+}
+
+.track-actions .btn,
+.detail-track-row .btn {
+    white-space: nowrap;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
 }
 
 .album-track-actions {

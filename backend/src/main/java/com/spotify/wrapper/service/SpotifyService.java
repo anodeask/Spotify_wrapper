@@ -7,11 +7,14 @@ import com.spotify.wrapper.dto.PlaybackDto;
 import com.spotify.wrapper.dto.QueueDto;
 import com.spotify.wrapper.dto.SearchResultDto;
 import com.spotify.wrapper.exception.SpotifyApiException;
+import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -45,6 +48,54 @@ public class SpotifyService {
     private void throwSpotifyApiError(int statusCode, String responseBody) {
         String message = extractSpotifyErrorMessage(responseBody);
         throw new SpotifyApiException(statusCode, message, responseBody);
+    }
+
+    private CloseableHttpResponse executeWithRateLimitRetry(HttpRequestBase request, String operationName) throws IOException {
+        final int maxAttempts = 4;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            CloseableHttpResponse response = httpClient.execute(request);
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            if (statusCode != 429 || attempt == maxAttempts) {
+                return response;
+            }
+
+            long delayMs = resolveRetryDelayMs(response, attempt);
+            logger.warn("Spotify API rate-limited during {} (attempt {}/{}). Retrying in {} ms", operationName, attempt, maxAttempts, delayMs);
+
+            EntityUtils.consumeQuietly(response.getEntity());
+            response.close();
+
+            try {
+                Thread.sleep(delayMs);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting to retry after Spotify rate limit", ie);
+            }
+        }
+
+        throw new IOException("Rate limit retry loop exited unexpectedly");
+    }
+
+    private long resolveRetryDelayMs(CloseableHttpResponse response, int attempt) {
+        Header retryAfterHeader = response.getFirstHeader("Retry-After");
+        if (retryAfterHeader != null) {
+            String value = retryAfterHeader.getValue();
+            try {
+                long retrySeconds = Long.parseLong(value.trim());
+                if (retrySeconds > 0) {
+                    return retrySeconds * 1000L;
+                }
+            } catch (NumberFormatException ignored) {
+                // Fall through to exponential backoff.
+            }
+        }
+
+        long baseDelayMs = 500L;
+        long exponentialDelayMs = baseDelayMs * (1L << Math.max(0, attempt - 1));
+        long jitterMs = (long) (Math.random() * 250L);
+        return exponentialDelayMs + jitterMs;
     }
 
     private String extractSpotifyErrorMessage(String responseBody) {
@@ -859,6 +910,112 @@ public class SpotifyService {
             logger.info("=== GET LIKED SONGS METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
             return result;
         }
+    }
+
+    public void saveLikedSongs(String userId, String ids) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== SAVE LIKED SONGS METHOD CALLED ===");
+        logger.debug("userId: {}, ids: {}", userId, ids);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        String normalizedUris = normalizeTrackUrisCsv(ids);
+        String url = SPOTIFY_API_BASE_URL + "/me/library?uris=" + URLEncoder.encode(normalizedUris, StandardCharsets.UTF_8);
+        logger.debug("Request URL: {}", url);
+
+        HttpPut request = new HttpPut(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = executeWithRateLimitRetry(request, "save liked songs")) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API PUT /me/library took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Save liked songs request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== SAVE LIKED SONGS METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
+    public void removeLikedSongs(String userId, String ids) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== REMOVE LIKED SONGS METHOD CALLED ===");
+        logger.debug("userId: {}, ids: {}", userId, ids);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        String normalizedUris = normalizeTrackUrisCsv(ids);
+        String url = SPOTIFY_API_BASE_URL + "/me/library?uris=" + URLEncoder.encode(normalizedUris, StandardCharsets.UTF_8);
+        logger.debug("Request URL: {}", url);
+
+        HttpDelete request = new HttpDelete(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = executeWithRateLimitRetry(request, "remove liked songs")) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API DELETE /me/library took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Remove liked songs request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== REMOVE LIKED SONGS METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
+    private String normalizeTrackUrisCsv(String ids) throws IOException {
+        if (ids == null || ids.isBlank()) {
+            throw new IOException("Track ids are required");
+        }
+
+        List<String> normalizedUris = Arrays.stream(ids.split(","))
+                .map(String::trim)
+                .filter(token -> !token.isBlank())
+                .map(this::toTrackUri)
+                .distinct()
+                .toList();
+
+        if (normalizedUris.isEmpty()) {
+            throw new IOException("Track ids are required");
+        }
+
+        if (normalizedUris.size() > 40) {
+            throw new IOException("A maximum of 40 track IDs is allowed per request");
+        }
+
+        return String.join(",", normalizedUris);
+    }
+
+    private String toTrackUri(String token) {
+        if (token.startsWith("spotify:track:")) {
+            return token;
+        }
+
+        String trimmed = token.trim();
+        if (trimmed.startsWith("https://open.spotify.com/track/")) {
+            String withoutPrefix = trimmed.substring("https://open.spotify.com/track/".length());
+            String id = withoutPrefix.split("\\?")[0];
+            return "spotify:track:" + id;
+        }
+
+        if (trimmed.matches("^[A-Za-z0-9]{22}$")) {
+            return "spotify:track:" + trimmed;
+        }
+
+        throw new IllegalArgumentException("Invalid track id or URI: " + token);
     }
     
     public RecentlyPlayedResponse getRecentlyPlayed(String userId, int limit, String before) throws IOException {

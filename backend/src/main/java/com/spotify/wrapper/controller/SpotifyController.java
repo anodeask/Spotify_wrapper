@@ -4,6 +4,7 @@ import com.spotify.wrapper.dto.DevicesDto;
 import com.spotify.wrapper.dto.PlaybackDto;
 import com.spotify.wrapper.dto.QueueDto;
 import com.spotify.wrapper.dto.SearchResultDto;
+import com.spotify.wrapper.exception.SpotifyApiException;
 import com.spotify.wrapper.service.SpotifyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/spotify")
@@ -297,6 +300,69 @@ public class SpotifyController {
             logger.error("Failed to get liked songs for userId: {}", userId, e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @PutMapping("/me/tracks")
+    public ResponseEntity<Map<String, Object>> saveLikedSongs(
+            @RequestParam String userId,
+            @RequestParam String ids) {
+        logger.info("Save liked songs request - userId: {}, ids: {}", userId, ids);
+
+        if (ids == null || ids.isBlank()) {
+            return ResponseEntity.badRequest().body(likedTracksResponse("failure", 400, "Track ids are required.", ids));
+        }
+
+        try {
+            spotifyService.saveLikedSongs(userId, ids);
+            logger.info("Liked songs saved successfully for userId: {}", userId);
+            return ResponseEntity.ok(likedTracksResponse("success", 200, "Liked songs saved successfully.", ids));
+        } catch (SpotifyApiException e) {
+            logger.error("Spotify API error while saving liked songs for userId: {}, status: {}", userId, e.getStatusCode());
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(likedTracksResponse("failure", e.getStatusCode(), e.getMessage(), ids));
+        } catch (IOException e) {
+            logger.error("Failed to save liked songs for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(likedTracksResponse("failure", 500, "Failed to save liked songs.", ids));
+        } catch (RuntimeException e) {
+            logger.error("Runtime error while saving liked songs for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(likedTracksResponse("failure", 500, e.getMessage(), ids));
+        }
+    }
+
+    @DeleteMapping("/me/tracks")
+    public ResponseEntity<Map<String, Object>> removeLikedSongs(
+            @RequestParam String userId,
+            @RequestParam String ids) {
+        logger.info("Remove liked songs request - userId: {}, ids: {}", userId, ids);
+
+        if (ids == null || ids.isBlank()) {
+            return ResponseEntity.badRequest().body(likedTracksResponse("failure", 400, "Track ids are required.", ids));
+        }
+
+        try {
+            spotifyService.removeLikedSongs(userId, ids);
+            logger.info("Liked songs removed successfully for userId: {}", userId);
+            return ResponseEntity.ok(likedTracksResponse("success", 200, "Liked songs removed successfully.", ids));
+        } catch (SpotifyApiException e) {
+            logger.error("Spotify API error while removing liked songs for userId: {}, status: {}", userId, e.getStatusCode());
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(likedTracksResponse("failure", e.getStatusCode(), e.getMessage(), ids));
+        } catch (IOException e) {
+            logger.error("Failed to remove liked songs for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(likedTracksResponse("failure", 500, "Failed to remove liked songs.", ids));
+        } catch (RuntimeException e) {
+            logger.error("Runtime error while removing liked songs for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(likedTracksResponse("failure", 500, e.getMessage(), ids));
+        }
+    }
+
+    private Map<String, Object> likedTracksResponse(String result, int status, String message, String ids) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("result", result);
+        payload.put("status", status);
+        payload.put("message", message);
+        payload.put("ids", ids);
+        return payload;
     }
     
     @GetMapping("/me/recently-played")

@@ -150,6 +150,33 @@ const Utils = {
     // Show error message
     showError: (message, container = '#error-container') => {
         const $container = $(container);
+
+        if ($container.length === 0) {
+            // Fallback to global floating alert when a local container is not present.
+            if (window.App && typeof App.showGlobalError === 'function') {
+                App.showGlobalError(message);
+                return;
+            }
+
+            let $globalError = $('#global-error');
+            if ($globalError.length === 0) {
+                $globalError = $('<div id="global-error" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 9999; margin-top: 1rem;"></div>');
+                $('body').append($globalError);
+            }
+
+            $globalError.html(`
+                <div class="alert alert-danger alert-dismissible fade show shadow global-floating-alert" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            setTimeout(() => {
+                $globalError.find('.alert').alert('close');
+            }, 5000);
+            return;
+        }
+
         $container.html(`
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-triangle me-2"></i>
@@ -163,6 +190,33 @@ const Utils = {
     // Show success message
     showSuccess: (message, container = '#success-container') => {
         const $container = $(container);
+
+        if ($container.length === 0) {
+            // Fallback to global floating alert when a local container is not present.
+            if (window.App && typeof App.showGlobalSuccess === 'function') {
+                App.showGlobalSuccess(message);
+                return;
+            }
+
+            let $globalSuccess = $('#global-success');
+            if ($globalSuccess.length === 0) {
+                $globalSuccess = $('<div id="global-success" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 9999; margin-top: 1rem;"></div>');
+                $('body').append($globalSuccess);
+            }
+
+            $globalSuccess.html(`
+                <div class="alert alert-success alert-dismissible fade show shadow global-floating-alert" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            setTimeout(() => {
+                $globalSuccess.find('.alert').alert('close');
+            }, 3000);
+            return;
+        }
+
         $container.html(`
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <i class="fas fa-check-circle me-2"></i>

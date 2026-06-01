@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -24,6 +25,8 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/auth")
@@ -48,12 +51,14 @@ public class AuthController {
     
     private final HttpClient httpClient = HttpClients.createDefault();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Set<String> pendingStates = ConcurrentHashMap.newKeySet();
     
     @GetMapping("/login")
     public ResponseEntity<String> login() {
         logger.info("OAuth login initiated - generating authorization URL");
         
         String state = generateState();
+        pendingStates.add(state);
         String encodedScope = URLEncoder.encode(scope, StandardCharsets.UTF_8);
         
         String authUrl = "https://accounts.spotify.com/authorize?" +
@@ -61,7 +66,8 @@ public class AuthController {
                 "&client_id=" + clientId +
                 "&scope=" + encodedScope +
                 "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8) +
-                "&state=" + state;
+            "&state=" + state +
+            "&show_dialog=true";
         
         logger.info("Generated authorization URL with state: {} and redirect_uri: {}", state, redirectUri);
         return ResponseEntity.ok(authUrl);
@@ -70,6 +76,11 @@ public class AuthController {
     @PostMapping("/callback")
     public ResponseEntity<Map<String, String>> callback(@RequestParam String code, @RequestParam String state) {
         logger.info("OAuth callback received with state: {}, code: {}...", state, code.substring(0, 10));
+
+        if (state == null || state.isBlank() || !pendingStates.remove(state)) {
+            logger.warn("OAuth callback rejected due to invalid/unknown state");
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid OAuth state"));
+        }
         
         try {
             // Exchange code for access token
@@ -93,10 +104,9 @@ public class AuthController {
             logger.info("Token exchange response status: {}", response.getStatusLine().getStatusCode());
             
             Map<String, Object> tokenResponse = objectMapper.readValue(responseBody, Map.class);
-            //print tokenResponse in logs
-            logger.info("Token exchange response: {}", tokenResponse);
             String accessToken = (String) tokenResponse.get("access_token");
             String refreshToken = (String) tokenResponse.get("refresh_token");
+            String grantedScope = (String) tokenResponse.get("scope");
             int expiresIn = (Integer) tokenResponse.get("expires_in");
             
             if (accessToken == null) {
@@ -105,6 +115,7 @@ public class AuthController {
             }
             
             logger.info("Successfully obtained access token, expires in: {} seconds", expiresIn);
+            logger.info("Granted Spotify scopes: {}", grantedScope);
             
             // Get user profile
             logger.info("Fetching user profile from Spotify");
@@ -146,6 +157,22 @@ public class AuthController {
         logger.warn("User not found for userId: {}", userId);
         return ResponseEntity.notFound().build();
     }
+
+    @Transactional
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestParam String userId) {
+        logger.info("Logout request received for userId: {}", userId);
+
+        Optional<User> userOpt = userRepository.findBySpotifyUserId(userId);
+        if (userOpt.isPresent()) {
+            userRepository.deleteBySpotifyUserId(userId);
+            logger.info("Deleted stored OAuth tokens for userId: {}", userId);
+        } else {
+            logger.info("No stored user record found during logout for userId: {}", userId);
+        }
+
+        return ResponseEntity.ok().build();
+    }
     
     private Map<String, String> getUserProfile(String accessToken) throws IOException {
         String profileUrl = "https://api.spotify.com/v1/me";
@@ -169,7 +196,9 @@ public class AuthController {
         if (existingUser.isPresent()) {
             User user = existingUser.get();
             user.setAccessToken(accessToken);
-            user.setRefreshToken(refreshToken);
+            if (refreshToken != null && !refreshToken.isBlank()) {
+                user.setRefreshToken(refreshToken);
+            }
             user.setTokenExpiresAt(LocalDateTime.now().plusSeconds(expiresIn));
             user.setDisplayName(displayName);
             user.setEmail(email);

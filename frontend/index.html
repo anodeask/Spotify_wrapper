@@ -352,6 +352,13 @@
                                     aria-label="Play Track">
                                     <i class="fas fa-play"></i>
                                 </button>
+                                <button class="btn btn-outline-danger btn-sm save-liked-btn"
+                                    data-id="{{id}}"
+                                    data-name="{{name}}"
+                                    title="Save to Liked Songs"
+                                    aria-label="Save to Liked Songs">
+                                    <i class="fas fa-heart"></i>
+                                </button>
                                 <button class="btn btn-outline-success btn-sm add-queue-btn"
                                     data-uri="{{uri}}"
                                     data-id="{{id}}"
@@ -544,6 +551,13 @@
                                     aria-label="Play Track">
                                     <i class="fas fa-play"></i>
                                 </button>
+                                <button class="btn btn-outline-danger btn-sm remove-liked-btn"
+                                    data-id="{{id}}"
+                                    data-name="{{name}}"
+                                    title="Remove from Liked Songs"
+                                    aria-label="Remove from Liked Songs">
+                                    <i class="fas fa-heart-crack"></i>
+                                </button>
                                 <button class="btn btn-outline-success btn-sm add-queue-btn"
                                     data-uri="{{uri}}"
                                     data-name="{{name}}"
@@ -583,6 +597,13 @@
                                     aria-label="Play Track">
                                     <i class="fas fa-play"></i>
                                 </button>
+                                <button class="btn btn-outline-danger btn-sm save-liked-btn"
+                                    data-id="{{id}}"
+                                    data-name="{{name}}"
+                                    title="Save to Liked Songs"
+                                    aria-label="Save to Liked Songs">
+                                    <i class="fas fa-heart"></i>
+                                </button>
                                 <button class="btn btn-outline-success btn-sm add-queue-btn"
                                     data-uri="{{uri}}"
                                     data-name="{{name}}"
@@ -614,6 +635,12 @@
                     data-name="{{name}}"
                     aria-label="Play {{name}}">
                     <i class="fas fa-play"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm save-liked-btn"
+                    data-id="{{id}}"
+                    data-name="{{name}}"
+                    aria-label="Save {{name}} to liked songs">
+                    <i class="fas fa-heart"></i>
                 </button>
                 <button class="btn btn-outline-success btn-sm add-queue-btn"
                     data-uri="{{uri}}"

@@ -235,6 +235,40 @@ const SpotifyAPI = {
         
         return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.LIKED_SONGS}?${params}`);
     },
+
+    async saveLikedSongs(trackIds) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            ids: this.normalizeTrackIds(trackIds)
+        });
+
+        const response = await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.LIKED_SONGS}?${params}`, {
+            method: 'PUT'
+        });
+
+        if (response?.result && response.result !== 'success') {
+            throw new Error(response.message || 'Failed to save to liked songs.');
+        }
+
+        return response;
+    },
+
+    async removeLikedSongs(trackIds) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            ids: this.normalizeTrackIds(trackIds)
+        });
+
+        const response = await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.LIKED_SONGS}?${params}`, {
+            method: 'DELETE'
+        });
+
+        if (response?.result && response.result !== 'success') {
+            throw new Error(response.message || 'Failed to remove from liked songs.');
+        }
+
+        return response;
+    },
     
     // Get recently played tracks
     async getRecentlyPlayed(limit = 50, before = null) {
@@ -297,6 +331,14 @@ const SpotifyAPI = {
         return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.ADD_TO_QUEUE}?${params}`, {
             method: 'POST'
         });
+    },
+
+    normalizeTrackIds(trackIds) {
+        if (Array.isArray(trackIds)) {
+            return trackIds.filter(Boolean).join(',');
+        }
+
+        return String(trackIds || '').trim();
     },
 
 };

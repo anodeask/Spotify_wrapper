@@ -2,6 +2,27 @@
 
 A full-stack web application that wraps the Spotify Web API, allowing users to search for music, manage playlists, control playback, and view their library.
 
+## Recent Changes (June 2026)
+
+- Fixed liked-track mutation runtime drift and validated that save/remove requests call Spotify `/v1/me/library?uris=...` in the active backend process.
+- Added explicit backend success/failure payloads for:
+   - `PUT /api/spotify/me/tracks`
+   - `DELETE /api/spotify/me/tracks`
+- Liked mutation responses now include `result`, `status`, `message`, and `ids` to support clear client feedback.
+- Updated client handlers in Search/Library/Detail flows to show backend confirmation/error messages for liked-track save/remove actions.
+- Confirmed global alert fallback behavior for success/error banners when local containers are unavailable.
+
+### Incidents and Learnings (June 2026)
+
+#### Incidents
+- Runtime drift caused repeated 403 responses because an older backend process was still calling Spotify `/v1/me/tracks` while source had moved to `/v1/me/library`.
+- Liked-track mutation operations returned no explicit success payload initially, resulting in missing user-facing confirmation in the client.
+
+#### Learnings
+- Verify active runtime behavior with logs and process checks whenever observed API behavior does not match the current code.
+- Use explicit mutation response contracts (`result`, `status`, `message`, `ids`) so frontend success/failure handling is consistent.
+- Keep a global notification fallback so confirmation messages remain visible even if local module alert containers are not present.
+
 ## Recent Changes (May 2026)
 
 - Added album detail view modal to browse album items (tracks) with pagination.
@@ -37,6 +58,7 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 - 🔄 **Auto-Refresh**: Recently played tracks refresh automatically every minute
 - 🔎 **Album Detail View**: Open album track list in a modal with paging and quick playback actions
 - ♿ **WCAG Level A Accessible**: Full keyboard navigation, ARIA labels, screen reader support, semantic HTML structure
+- ✅ **Explicit Mutation Feedback**: Liked-track add/remove actions return structured success/failure payloads and show clear in-app confirmation messages
 
 ## Tech Stack
 
@@ -189,6 +211,7 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 - **No active device (404)**: Play/pause/next/previous operations return 404 when no device is active; frontend maps this to a clear prompt to activate a Spotify device
 - **Playback commands**: Invalid requests surface clear error messages instead of generic server errors
 - **Spotify API errors propagated**: Backend uses `SpotifyApiException` + `GlobalExceptionHandler` to forward Spotify's original status code and message to the client instead of returning a generic 500
+- **Liked-track mutation contract**: `PUT/DELETE /api/spotify/me/tracks` return structured payloads with `result/status/message/ids`, and frontend surfaces `message` directly
 - **In-app error notifications**: All error feedback in `library.js` (play playlist, play track, add to queue) uses `Utils.showError()` instead of browser `alert()` dialogs, keeping users in context
 - **High-contrast global alerts**: Error and success banners use solid opaque backgrounds (`rgba(133,20,32,0.96)` / `rgba(19,96,53,0.96)`) with white text and a white close button so they remain clearly visible against the dark app background
 
@@ -225,6 +248,8 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 ### Library
 - `GET /api/spotify/me/playlists` - Get user's playlists
 - `GET /api/spotify/me/tracks` - Get user's liked songs
+- `PUT /api/spotify/me/tracks` - Save one or more tracks to Liked Songs (`ids` query param, comma-separated)
+- `DELETE /api/spotify/me/tracks` - Remove one or more tracks from Liked Songs (`ids` query param, comma-separated)
 - `GET /api/spotify/me/recently-played` - Get recently played tracks
 
 ## Database Schema

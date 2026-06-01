@@ -1,6 +1,6 @@
 # Spotify Wrapper - Project Context
 
-> **Last Updated:** May 25, 2026
+> **Last Updated:** June 1, 2026
 
 This document provides a comprehensive overview of the Spotify Wrapper project, including architecture, recent changes, and development notes.
 
@@ -136,6 +136,8 @@ spotify/
 |--------|----------|------------|-------------|
 | GET | `/me/playlists` | `userId`, `limit`, `offset` | Get user's playlists |
 | GET | `/me/tracks` | `userId`, `limit`, `offset` | Get user's liked songs |
+| PUT | `/me/tracks` | `userId`, `ids` | Save tracks to user's Liked Songs |
+| DELETE | `/me/tracks` | `userId`, `ids` | Remove tracks from user's Liked Songs |
 | GET | `/me/recently-played` | `userId`, `limit` | Get recently played tracks |
 | GET | `/albums/tracks` | `userId`, `albumId`, `limit`, `offset` | Get tracks for a specific album |
 
@@ -260,6 +262,34 @@ const Config = {
 ---
 
 ## 📝 Recent Changes
+
+### June 1, 2026
+
+#### Liked Tracks Save/Remove: Runtime + Contract Alignment
+- Validated live runtime to ensure liked-track mutation calls use Spotify `/v1/me/library?uris=...`.
+- Resolved stale-runtime mismatch that previously surfaced 403 errors while code and runtime were out of sync.
+- Added explicit JSON response contract in backend liked mutation endpoints:
+  - `PUT /api/spotify/me/tracks`
+  - `DELETE /api/spotify/me/tracks`
+- Response fields now include `result`, `status`, `message`, and `ids` for both success and failure cases.
+
+#### Client Confirmation Handling for Liked Mutations
+- Updated frontend API wrapper to validate backend mutation response and throw with backend-provided message when `result !== "success"`.
+- Updated liked-track action handlers in Search, Library, and Detail modules to display backend `message` for success/error confirmations.
+- Confirmed global alert fallback in `config.js` displays messages even when local module alert containers are absent.
+
+#### Operational Validation
+- Recompiled backend and restarted services to verify active process behavior.
+- Confirmed mutation endpoint behavior through direct API invocation and backend log inspection.
+
+#### Incidents
+- **Runtime drift:** A stale backend process continued calling Spotify `/v1/me/tracks` while updated source expected `/v1/me/library`, creating repeated 403 failures.
+- **No mutation confirmation:** Liked-track add/remove endpoints initially returned empty success responses, leaving the client without reliable confirmation text.
+
+#### Learnings
+- Validate runtime endpoint behavior from active logs and process state after restarts; source-level inspection alone is insufficient.
+- Standardize mutation responses with explicit `result/status/message/ids` payload fields so UI handling remains predictable.
+- Keep frontend notification logic resilient by supporting both module-local and global alert containers.
 
 ### May 25, 2026
 
@@ -578,6 +608,20 @@ curl "http://localhost:9090/api/spotify/me/recently-played?userId=<userId>&limit
 
 ### UI Change Guardrail
 - If a task may alter icon-only mode for action buttons (Play/Add to Queue), provide an explicit warning to the developer before drafting or updating implementation plans.
+
+### Specific Instruction
+
+You are helping me build an application using the Spotify Web API. Follow these rules:
+
+- OpenAPI spec: Refer to the Spotify OpenAPI specification at https://developer.spotify.com/reference/web-api/open-api-schema.yaml for all endpoint paths, parameters, and response schemas. Do not guess endpoints or field names.
+- Authorization: Use the Authorization Code with PKCE flow (https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow) for any user-specific data. If the app has a secure backend, the Authorization Code flow (https://developer.spotify.com/documentation/web-api/tutorials/code-flow) is also acceptable. Only use Client Credentials for public, non-user data. Never use the Implicit Grant flow (it is deprecated).
+- Redirect URIs: Always use HTTPS redirect URIs (except http://127.0.0.1 for local development). Never use http://localhost or wildcard URIs. See https://developer.spotify.com/documentation/web-api/concepts/redirect_uri for requirements.
+- Scopes: Request only the minimum scopes (https://developer.spotify.com/documentation/web-api/concepts/scopes) needed for the features being built. Do not request broad scopes preemptively.
+- Token management: Store tokens securely. Never expose the Client Secret in client-side code. Implement token refresh (https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens) logic so the app does not break when access tokens expire.
+- Rate limits: Implement exponential backoff and respect the Retry-After header when receiving HTTP 429 responses. Do not retry immediately or in tight loops.
+- Deprecated endpoints: Do not use deprecated endpoints. Prefer /playlists/{id}/items over /playlists/{id}/tracks, and use /me/library over the type-specific library endpoints.
+- Error handling: Handle all HTTP error codes documented in the OpenAPI schema. Read the returned error message and use it to provide meaningful feedback to the user.
+- Developer Terms of Service: Comply with the Spotify Developer Terms (https://developer.spotify.com/terms). In particular: do not cache Spotify content beyond what is needed for immediate use, always attribute content to Spotify, and do not use the API to train machine learning models on Spotify data.
 
 ---
 

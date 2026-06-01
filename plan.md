@@ -2,6 +2,32 @@
 
 ## Implementation Update (May 2026)
 
+### Liked Tracks Contract and UX Update (June 2026)
+- Confirmed runtime path for liked-track save/remove now uses Spotify `PUT/DELETE /v1/me/library?uris=...` (not deprecated `/v1/me/tracks`).
+- Added explicit backend JSON responses for liked-track mutation endpoints:
+   - `PUT /api/spotify/me/tracks`
+   - `DELETE /api/spotify/me/tracks`
+- Response payload now consistently includes:
+   - `result` (`success` or `failure`)
+   - `status` (HTTP status code)
+   - `message` (user-facing confirmation or error text)
+   - `ids` (requested track ids)
+- Frontend updated to consume and surface backend mutation messages in:
+   - `frontend/js/spotify.js`
+   - `frontend/js/library.js`
+   - `frontend/js/search.js`
+   - `frontend/js/detail.js`
+- Global alert fallback behavior in `frontend/js/config.js` ensures confirmations are visible even if local alert containers are missing.
+
+#### Incidents (June 2026)
+- **Runtime drift incident:** Source code pointed to `/v1/me/library` but a stale backend process was still calling `/v1/me/tracks`, causing recurring 403 responses.
+- **Contract visibility incident:** Backend returned empty success responses for liked-track mutations, so users did not receive explicit UI confirmation.
+
+#### Learnings (June 2026)
+- Always verify active runtime behavior from logs/process state, not just source code, when API behavior and observed results diverge.
+- Mutation endpoints should return structured response bodies for both success and failure to keep frontend feedback deterministic.
+- Frontend success messaging should prefer server-provided messages and keep a global fallback path when local alert containers are absent.
+
 ### UI Guardrail Update (May 2026)
 - Search, library, and related result-card play/add actions are standardized to **icon-only mode**.
 - Developer instruction added: warn the developer before planning any change that modifies icon-only mode behavior.

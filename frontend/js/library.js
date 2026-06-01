@@ -102,6 +102,8 @@ const Library = {
         $(document).on('click', '#my-playlists-list .play-playlist-btn', this.handlePlayPlaylist.bind(this));
         $(document).on('click', '#liked-songs-list .play-track-btn', this.handlePlayTrack.bind(this));
         $(document).on('click', '#recently-played-list .play-track-btn', this.handlePlayTrack.bind(this));
+        $(document).on('click', '#liked-songs-list .remove-liked-btn', this.handleRemoveLikedSong.bind(this));
+        $(document).on('click', '#recently-played-list .save-liked-btn', this.handleSaveLikedSong.bind(this));
         $(document).on('click', '#liked-songs-list .add-queue-btn', this.handleAddToQueue.bind(this));
         $(document).on('click', '#recently-played-list .add-queue-btn', this.handleAddToQueue.bind(this));
     },
@@ -629,6 +631,52 @@ const Library = {
             console.error('Error adding to queue:', error);
             Utils.showError(error.message || 'Failed to add to queue.');
         } finally {
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    async handleSaveLikedSong(event) {
+        const $button = $(event.currentTarget);
+        const trackId = $button.data('id');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
+
+        if (!trackId) {
+            return;
+        }
+
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.saveLikedSongs(trackId);
+            Utils.showSuccess(response?.message || `Saved to Liked Songs: ${name}`);
+        } catch (error) {
+            console.error('Error saving liked song:', error);
+            Utils.showError(error.message || 'Failed to save to liked songs.');
+        } finally {
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    async handleRemoveLikedSong(event) {
+        const $button = $(event.currentTarget);
+        const trackId = $button.data('id');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
+
+        if (!trackId) {
+            return;
+        }
+
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.removeLikedSongs(trackId);
+            Utils.showSuccess(response?.message || `Removed from Liked Songs: ${name}`);
+            await this.loadLikedSongs(this.currentLikedSongsPage * this.likedSongsLimit);
+        } catch (error) {
+            console.error('Error removing liked song:', error);
+            Utils.showError(error.message || 'Failed to remove from liked songs.');
             $button.prop('disabled', false).html(originalHtml);
         }
     },

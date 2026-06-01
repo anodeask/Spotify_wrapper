@@ -65,6 +65,7 @@ const SearchModule = {
         // Delegate events for dynamically created elements
         $('#search-results').on('click', '.play-track-btn', this.handlePlayTrack.bind(this));
         $('#search-results').on('click', '.play-playlist-btn', this.handlePlayPlaylist.bind(this));
+        $('#search-results').on('click', '.save-liked-btn', this.handleSaveLikedSong.bind(this));
         $('#search-results').on('click', '.add-queue-btn', this.handleAddToQueue.bind(this));
         $('#search-results').on('mouseenter', '.album-track-actions button', this.showActionTooltip.bind(this));
         $('#search-results').on('mousemove', '.album-track-actions button', this.moveActionTooltip.bind(this));
@@ -348,6 +349,29 @@ const SearchModule = {
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
         } finally {
             // Restore the button label/icon as originally rendered
+            $btn.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    async handleSaveLikedSong(e) {
+        const $btn = $(e.currentTarget);
+        const trackId = $btn.data('id');
+        const name = $btn.data('name');
+        const originalHtml = $btn.html();
+
+        if (!trackId) {
+            return;
+        }
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.saveLikedSongs(trackId);
+            Utils.showSuccess(response?.message || `Saved to Liked Songs: ${name}`);
+        } catch (error) {
+            console.error('Failed to save liked song:', error);
+            Utils.showError(error.message || CONFIG.ERRORS.GENERIC);
+        } finally {
             $btn.prop('disabled', false).html(originalHtml);
         }
     },
