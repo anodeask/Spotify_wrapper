@@ -42,3 +42,7 @@ backend/target/classes/application.properties
 
 # Local root config (contains secrets)
 application.properties
+
+# Runtime PID files
+frontend.pid
+backend.pid
