@@ -510,7 +510,8 @@ const Library = {
 
         if (totalPages <= 1) return;
 
-        let html = '<nav><ul class="pagination">';
+        let html = '<div class="pagination-row d-flex flex-wrap justify-content-center align-items-center gap-2">';
+        html += '<nav class="m-0"><ul class="pagination mb-0">';
 
         // Previous button
         html += `<li class="page-item ${currentPage === 0 ? 'disabled' : ''}">
@@ -533,7 +534,8 @@ const Library = {
         </li>`;
 
         html += '</ul></nav>';
-        html += `<p class="text-muted text-center small">Showing ${currentOffset + 1}-${Math.min(currentOffset + limit, total)} of ${total}</p>`;
+        html += `<p class="text-muted text-center small mb-0">Showing ${currentOffset + 1}-${Math.min(currentOffset + limit, total)} of ${total}</p>`;
+        html += '</div>';
 
         $container.html(html);
 
