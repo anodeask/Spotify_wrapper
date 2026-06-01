@@ -39,3 +39,6 @@ backend/target/classes/application.properties
 
 # Keep the template
 !application.properties.template
+
+# Local root config (contains secrets)
+application.properties
