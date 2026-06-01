@@ -28,6 +28,23 @@
 - Mutation endpoints should return structured response bodies for both success and failure to keep frontend feedback deterministic.
 - Frontend success messaging should prefer server-provided messages and keep a global fallback path when local alert containers are absent.
 
+### OAuth/Token Stability and Secret Hygiene (June 2026)
+- Fixed backend token refresh flow to handle Spotify error payloads safely and prevent null-cast 500 failures.
+- Fixed OAuth callback token exchange parsing to handle invalid grant/client responses without `NullPointerException`.
+- Standardized auth/token failures to meaningful 4xx responses with actionable error messages.
+- Contained credential exposure by untracking root `application.properties`, introducing sanitized `application.properties.template`, and strengthening `.gitignore`.
+- Added `.gitignore` entries for runtime PID files: `frontend.pid` and `backend.pid`.
+
+#### Incidents (June 2026)
+- **Login crash incident:** Callback path returned 500 when Spotify token error payload omitted `expires_in`.
+- **Token refresh crash incident:** Refresh path returned 500 for the same null-cast assumption during background API calls.
+- **Credential exposure incident:** Spotify client credentials were present in a tracked root properties file.
+
+#### Learnings (June 2026)
+- OAuth and refresh token parsing must validate response shape for both success and error payloads.
+- Return explicit auth/token failure messages to accelerate debugging and avoid opaque frontend failures.
+- Secret exposure response should be immediate and procedural: rotate, untrack, ignore, template, then history cleanup if pushed.
+
 ### UI Guardrail Update (May 2026)
 - Search, library, and related result-card play/add actions are standardized to **icon-only mode**.
 - Developer instruction added: warn the developer before planning any change that modifies icon-only mode behavior.

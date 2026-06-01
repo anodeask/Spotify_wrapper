@@ -11,6 +11,9 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 - Liked mutation responses now include `result`, `status`, `message`, and `ids` to support clear client feedback.
 - Updated client handlers in Search/Library/Detail flows to show backend confirmation/error messages for liked-track save/remove actions.
 - Confirmed global alert fallback behavior for success/error banners when local containers are unavailable.
+- Fixed OAuth token-exchange and token-refresh crash paths that previously returned 500 due to null `expires_in` casting.
+- Added defensive Spotify error handling in auth/token flows so invalid credentials/codes now return meaningful 4xx errors instead of generic 500 responses.
+- Hardened repository secret handling: stopped tracking root `application.properties`, added sanitized `application.properties.template`, and updated `.gitignore` for local config and PID files.
 
 ### Incidents and Learnings (June 2026)
 
@@ -22,6 +25,8 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 - Verify active runtime behavior with logs and process checks whenever observed API behavior does not match the current code.
 - Use explicit mutation response contracts (`result`, `status`, `message`, `ids`) so frontend success/failure handling is consistent.
 - Keep a global notification fallback so confirmation messages remain visible even if local module alert containers are not present.
+- Treat credential exposure as an incident response workflow: rotate secrets first, then remove tracked secret files and clean git history.
+- Parse Spotify token responses defensively because error payloads may omit fields expected in success payloads.
 
 ## Recent Changes (May 2026)
 

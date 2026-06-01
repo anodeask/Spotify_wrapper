@@ -282,6 +282,17 @@ const Config = {
 - Recompiled backend and restarted services to verify active process behavior.
 - Confirmed mutation endpoint behavior through direct API invocation and backend log inspection.
 
+#### OAuth and Token Error-Handling Hardening
+- Fixed token refresh handling to avoid `NullPointerException` when Spotify returns error payloads without `expires_in`.
+- Fixed auth callback token exchange handling to avoid null-cast crashes on invalid code/client responses.
+- Updated both flows to surface structured, meaningful 4xx responses (for example `invalid_client`, `invalid_grant`) instead of generic 500 errors.
+
+#### Security and Repository Hygiene
+- Identified exposed Spotify credentials in tracked root `application.properties` and moved to incident-response handling.
+- Added root `application.properties` to `.gitignore` and untracked it from git.
+- Added sanitized `application.properties.template` placeholders for safe sharing.
+- Added runtime PID files to `.gitignore`: `frontend.pid`, `backend.pid`.
+
 #### Incidents
 - **Runtime drift:** A stale backend process continued calling Spotify `/v1/me/tracks` while updated source expected `/v1/me/library`, creating repeated 403 failures.
 - **No mutation confirmation:** Liked-track add/remove endpoints initially returned empty success responses, leaving the client without reliable confirmation text.
@@ -290,6 +301,8 @@ const Config = {
 - Validate runtime endpoint behavior from active logs and process state after restarts; source-level inspection alone is insufficient.
 - Standardize mutation responses with explicit `result/status/message/ids` payload fields so UI handling remains predictable.
 - Keep frontend notification logic resilient by supporting both module-local and global alert containers.
+- Treat leaked client credentials as compromised immediately: rotate first, then remove tracked files and clean history if already pushed.
+- Assume Spotify error responses can differ by flow and status; validate fields before casting.
 
 ### May 25, 2026
 

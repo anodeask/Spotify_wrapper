@@ -2,8 +2,8 @@ package com.spotify.wrapper.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.wrapper.entity.User;
+import com.spotify.wrapper.exception.SpotifyApiException;
 import com.spotify.wrapper.repository.UserRepository;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -171,14 +171,38 @@ public class TokenService {
             logger.debug("Token refresh API call took {}ms", apiEndTime - apiStartTime);
 
             String responseBody = EntityUtils.toString(response.getEntity());
-            // Ensure entity is fully consumed to release connection
-            EntityUtils.consume(response.getEntity());
+            int statusCode = response.getStatusLine().getStatusCode();
 
             @SuppressWarnings("unchecked")
             Map<String, Object> tokenResponse = objectMapper.readValue(responseBody, Map.class);
 
+            if (statusCode >= 400) {
+                String error = tokenResponse.get("error") != null
+                        ? String.valueOf(tokenResponse.get("error"))
+                        : "unknown_error";
+                String errorDescription = tokenResponse.get("error_description") != null
+                        ? String.valueOf(tokenResponse.get("error_description"))
+                        : "No details provided by Spotify";
+
+                throw new SpotifyApiException(
+                        statusCode,
+                        "Spotify token refresh failed: " + error + " - " + errorDescription,
+                        responseBody
+                );
+            }
+
             String newAccessToken = (String) tokenResponse.get("access_token");
-            int expiresIn = (Integer) tokenResponse.get("expires_in");
+            Number expiresInValue = (Number) tokenResponse.get("expires_in");
+
+            if (newAccessToken == null || expiresInValue == null) {
+                throw new SpotifyApiException(
+                        502,
+                        "Invalid token refresh response from Spotify",
+                        responseBody
+                );
+            }
+
+            int expiresIn = expiresInValue.intValue();
 
             return new TokenRefreshResult(newAccessToken, expiresIn);
         }

@@ -100,19 +100,40 @@ public class AuthController {
             
             HttpResponse response = httpClient.execute(request);
             String responseBody = EntityUtils.toString(response.getEntity());
+                int statusCode = response.getStatusLine().getStatusCode();
             
-            logger.info("Token exchange response status: {}", response.getStatusLine().getStatusCode());
+                logger.info("Token exchange response status: {}", statusCode);
             
+                @SuppressWarnings("unchecked")
             Map<String, Object> tokenResponse = objectMapper.readValue(responseBody, Map.class);
+
+                if (statusCode >= 400) {
+                String error = tokenResponse.get("error") != null
+                    ? String.valueOf(tokenResponse.get("error"))
+                    : "unknown_error";
+                String errorDescription = tokenResponse.get("error_description") != null
+                    ? String.valueOf(tokenResponse.get("error_description"))
+                    : "No details provided by Spotify";
+
+                logger.error("Token exchange failed: {} - {}", error, errorDescription);
+                return ResponseEntity.status(statusCode).body(Map.of(
+                    "error", "Spotify token exchange failed: " + error + " - " + errorDescription
+                ));
+                }
+
             String accessToken = (String) tokenResponse.get("access_token");
             String refreshToken = (String) tokenResponse.get("refresh_token");
             String grantedScope = (String) tokenResponse.get("scope");
-            int expiresIn = (Integer) tokenResponse.get("expires_in");
+                Number expiresInValue = (Number) tokenResponse.get("expires_in");
             
-            if (accessToken == null) {
+                if (accessToken == null || expiresInValue == null) {
                 logger.error("Failed to obtain access token from Spotify. Response: {}", responseBody);
-                return ResponseEntity.badRequest().build();
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Invalid token response from Spotify"
+                ));
             }
+
+                int expiresIn = expiresInValue.intValue();
             
             logger.info("Successfully obtained access token, expires in: {} seconds", expiresIn);
             logger.info("Granted Spotify scopes: {}", grantedScope);
