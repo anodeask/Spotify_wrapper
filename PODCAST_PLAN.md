@@ -19,10 +19,10 @@ Add comprehensive podcast support to the Spotify Wrapper, including search, disc
 - [x] Frontend library tab for podcasts
 
 ### Phase 2: Episode Management (Enhancement)
-- [ ] Save/unsave individual episodes
-- [ ] Get user's saved episodes
-- [ ] Episode playback controls
-- [ ] Episode progress tracking
+- [x] Save/unsave individual episodes
+- [x] Get user's saved episodes
+- [x] Episode playback controls
+- [x] Episode progress tracking
 
 ### Phase 3: Advanced Features (Future)
 - [ ] Podcast recommendations

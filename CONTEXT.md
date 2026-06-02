@@ -200,6 +200,7 @@ spotify/
 - Lazy loading (loads content only when tab is activated)
 - Add-to-queue actions for track cards in Liked Songs and Recently Played
 - Restores async podcast button state after completion even when no visible rerender occurs
+- Preloads the full saved-episode index before rendering podcast episode rows so already saved episodes consistently show the remove state in the modal
 
 ### `devices.js`
 - Device list rendering

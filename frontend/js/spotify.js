@@ -270,6 +270,50 @@ const SpotifyAPI = {
         return response;
     },
 
+    async getSavedEpisodes(limit = 20, offset = 0) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            limit: limit.toString(),
+            offset: offset.toString()
+        });
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.SAVED_EPISODES}?${params}`);
+    },
+
+    async saveEpisodes(episodeIds) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            ids: this.normalizeEpisodeIds(episodeIds)
+        });
+
+        const response = await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.SAVED_EPISODES}?${params}`, {
+            method: 'PUT'
+        });
+
+        if (response?.result && response.result !== 'success') {
+            throw new Error(response.message || 'Failed to save episode.');
+        }
+
+        return response;
+    },
+
+    async removeEpisodes(episodeIds) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            ids: this.normalizeEpisodeIds(episodeIds)
+        });
+
+        const response = await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.SAVED_EPISODES}?${params}`, {
+            method: 'DELETE'
+        });
+
+        if (response?.result && response.result !== 'success') {
+            throw new Error(response.message || 'Failed to remove episode.');
+        }
+
+        return response;
+    },
+
     async searchPodcasts(query, limit = CONFIG.SEARCH.DEFAULT_LIMIT) {
         const params = new URLSearchParams({
             userId: this.userId,
@@ -419,6 +463,14 @@ const SpotifyAPI = {
         }
 
         return String(showIds || '').trim();
+    },
+
+    normalizeEpisodeIds(episodeIds) {
+        if (Array.isArray(episodeIds)) {
+            return episodeIds.filter(Boolean).join(',');
+        }
+
+        return String(episodeIds || '').trim();
     },
 
 };

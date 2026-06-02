@@ -483,7 +483,84 @@ public class SpotifyController {
         }
     }
 
+    @GetMapping("/me/episodes")
+    public ResponseEntity<SpotifyService.ShowEpisodesResponse> getSavedEpisodes(
+            @RequestParam String userId,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        logger.info("Get saved episodes request - userId: {}, limit: {}, offset: {}", userId, limit, offset);
+
+        try {
+            SpotifyService.ShowEpisodesResponse episodes = spotifyService.getSavedEpisodes(userId, limit, offset);
+            logger.info("Saved episodes retrieved successfully for userId: {}, found {} episodes",
+                    userId, episodes.getItems() != null ? episodes.getItems().size() : 0);
+            return ResponseEntity.ok(episodes);
+        } catch (IOException e) {
+            logger.error("Failed to get saved episodes for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PutMapping("/me/episodes")
+    public ResponseEntity<Map<String, Object>> saveEpisodes(
+            @RequestParam String userId,
+            @RequestParam String ids) {
+        logger.info("Save episodes request - userId: {}, ids: {}", userId, ids);
+
+        if (ids == null || ids.isBlank()) {
+            return ResponseEntity.badRequest().body(episodesResponse("failure", 400, "Episode ids are required.", ids));
+        }
+
+        try {
+            spotifyService.saveEpisodes(userId, ids);
+            return ResponseEntity.ok(episodesResponse("success", 200, "Episodes saved successfully.", ids));
+        } catch (SpotifyApiException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(episodesResponse("failure", e.getStatusCode(), e.getMessage(), ids));
+        } catch (IOException e) {
+            logger.error("Failed to save episodes for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(episodesResponse("failure", 500, "Failed to save episodes.", ids));
+        } catch (RuntimeException e) {
+            logger.error("Runtime error while saving episodes for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(episodesResponse("failure", 500, e.getMessage(), ids));
+        }
+    }
+
+    @DeleteMapping("/me/episodes")
+    public ResponseEntity<Map<String, Object>> removeEpisodes(
+            @RequestParam String userId,
+            @RequestParam String ids) {
+        logger.info("Remove episodes request - userId: {}, ids: {}", userId, ids);
+
+        if (ids == null || ids.isBlank()) {
+            return ResponseEntity.badRequest().body(episodesResponse("failure", 400, "Episode ids are required.", ids));
+        }
+
+        try {
+            spotifyService.removeEpisodes(userId, ids);
+            return ResponseEntity.ok(episodesResponse("success", 200, "Episodes removed successfully.", ids));
+        } catch (SpotifyApiException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(episodesResponse("failure", e.getStatusCode(), e.getMessage(), ids));
+        } catch (IOException e) {
+            logger.error("Failed to remove episodes for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(episodesResponse("failure", 500, "Failed to remove episodes.", ids));
+        } catch (RuntimeException e) {
+            logger.error("Runtime error while removing episodes for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(episodesResponse("failure", 500, e.getMessage(), ids));
+        }
+    }
+
     private Map<String, Object> showsResponse(String result, int status, String message, String ids) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("result", result);
+        payload.put("status", status);
+        payload.put("message", message);
+        payload.put("ids", ids);
+        return payload;
+    }
+
+    private Map<String, Object> episodesResponse(String result, int status, String message, String ids) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("result", result);
         payload.put("status", status);

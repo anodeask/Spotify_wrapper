@@ -1122,6 +1122,11 @@ public class SearchResultDto {
         private String href;
         private String type;
         private String uri;
+        @JsonProperty("added_at")
+        private String addedAt;
+        private ShowDto show;
+        @JsonProperty("resume_point")
+        private ResumePointDto resumePoint;
         @JsonProperty("external_urls")
         private ExternalUrls externalUrls;
 
@@ -1197,12 +1202,60 @@ public class SearchResultDto {
             this.uri = uri;
         }
 
+        public String getAddedAt() {
+            return addedAt;
+        }
+
+        public void setAddedAt(String addedAt) {
+            this.addedAt = addedAt;
+        }
+
+        public ShowDto getShow() {
+            return show;
+        }
+
+        public void setShow(ShowDto show) {
+            this.show = show;
+        }
+
+        public ResumePointDto getResumePoint() {
+            return resumePoint;
+        }
+
+        public void setResumePoint(ResumePointDto resumePoint) {
+            this.resumePoint = resumePoint;
+        }
+
         public ExternalUrls getExternalUrls() {
             return externalUrls;
         }
 
         public void setExternalUrls(ExternalUrls externalUrls) {
             this.externalUrls = externalUrls;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ResumePointDto {
+        @JsonProperty("fully_played")
+        private boolean fullyPlayed;
+        @JsonProperty("resume_position_ms")
+        private long resumePositionMs;
+
+        public boolean isFullyPlayed() {
+            return fullyPlayed;
+        }
+
+        public void setFullyPlayed(boolean fullyPlayed) {
+            this.fullyPlayed = fullyPlayed;
+        }
+
+        public long getResumePositionMs() {
+            return resumePositionMs;
+        }
+
+        public void setResumePositionMs(long resumePositionMs) {
+            this.resumePositionMs = resumePositionMs;
         }
     }
     

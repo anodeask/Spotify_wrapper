@@ -4,10 +4,15 @@ const Library = {
     currentPlaylistsPage: 0,
     currentLikedSongsPage: 0,
     currentPodcastsPage: 0,
+    currentSavedEpisodesPage: 0,
     podcastsLimit: 20,
+    savedEpisodesLimit: 20,
     playlistsLimit: 20,
     likedSongsLimit: 20,
     recentlyPlayedLimit: 20,
+    savedEpisodeIds: new Set(),
+    savedEpisodesIndexLoaded: false,
+    savedEpisodesIndexLoading: null,
     podcastModal: null,
     podcastModalState: {
         showId: null,
@@ -28,7 +33,8 @@ const Library = {
         playlists: false,
         likedSongs: false,
         recentlyPlayed: false,
-        podcasts: false
+        podcasts: false,
+        savedEpisodes: false
     },
 
     init() {
@@ -42,6 +48,9 @@ const Library = {
         const likedSongTemplate = document.getElementById('liked-song-template');
         const recentlyPlayedTemplate = document.getElementById('recently-played-template');
         const podcastTemplate = document.getElementById('podcast-template');
+        const savedPodcastCardTemplate = document.getElementById('saved-podcast-card-template');
+        const savedEpisodeCardTemplate = document.getElementById('saved-episode-card-template');
+        const podcastEpisodeRowTemplate = document.getElementById('podcast-episode-row-template');
 
         if (playlistTemplate) {
             this.templates.playlist = Handlebars.compile(playlistTemplate.innerHTML);
@@ -54,6 +63,15 @@ const Library = {
         }
         if (podcastTemplate) {
             this.templates.podcast = Handlebars.compile(podcastTemplate.innerHTML);
+        }
+        if (savedPodcastCardTemplate) {
+            this.templates.savedPodcastCard = Handlebars.compile(savedPodcastCardTemplate.innerHTML);
+        }
+        if (savedEpisodeCardTemplate) {
+            this.templates.savedEpisodeCard = Handlebars.compile(savedEpisodeCardTemplate.innerHTML);
+        }
+        if (podcastEpisodeRowTemplate) {
+            this.templates.podcastEpisodeRow = Handlebars.compile(podcastEpisodeRowTemplate.innerHTML);
         }
 
         // Register helpers if not already registered
@@ -80,6 +98,12 @@ const Library = {
             }
         });
 
+        $('#saved-episodes-tab-btn').on('shown.bs.tab', () => {
+            if (!this.isLoaded.savedEpisodes) {
+                this.loadSavedEpisodes();
+            }
+        });
+
         $('#liked-songs-tab-btn').on('shown.bs.tab', () => {
             if (!this.isLoaded.likedSongs) {
                 this.loadLikedSongs();
@@ -95,7 +119,7 @@ const Library = {
         });
 
         // Stop auto-refresh and scroll when switching away from recently played tab
-        $('#playlists-tab-btn, #liked-songs-tab-btn, #podcasts-tab-btn').on('shown.bs.tab', () => {
+        $('#playlists-tab-btn, #liked-songs-tab-btn, #podcasts-tab-btn, #saved-episodes-tab-btn').on('shown.bs.tab', () => {
             this.stopRecentlyPlayedAutoRefresh();
             this.unbindRecentlyPlayedScroll();
         });
@@ -131,6 +155,9 @@ const Library = {
         $(document).on('click', '.save-show-btn', this.handleSaveShow.bind(this));
         $(document).on('click', '.remove-show-btn', this.handleRemoveShow.bind(this));
         $(document).on('click', '.view-show-episodes-btn', this.handleViewShowEpisodes.bind(this));
+        $(document).on('click', '.play-episode-btn', this.handlePlayEpisode.bind(this));
+        $(document).on('click', '.save-episode-btn', this.handleSaveEpisode.bind(this));
+        $(document).on('click', '.remove-episode-btn', this.handleRemoveEpisode.bind(this));
 
         $('#podcast-prev-btn').on('click', () => this.loadPodcastEpisodesPage(this.podcastModalState.offset - this.podcastModalState.limit));
         $('#podcast-next-btn').on('click', () => this.loadPodcastEpisodesPage(this.podcastModalState.offset + this.podcastModalState.limit));
@@ -209,6 +236,10 @@ const Library = {
         } else if ($('#podcasts-tab-btn').hasClass('active')) {
             if (!this.isLoaded.podcasts) {
                 this.loadSavedPodcasts();
+            }
+        } else if ($('#saved-episodes-tab-btn').hasClass('active')) {
+            if (!this.isLoaded.savedEpisodes) {
+                this.loadSavedEpisodes();
             }
         }
     },
@@ -391,49 +422,144 @@ const Library = {
             return;
         }
 
-        data.items.forEach(show => {
+        data.items.forEach((show) => {
             const imageUrl = show.images && show.images.length > 0
                 ? show.images[0].url
                 : 'https://via.placeholder.com/64?text=Podcast';
+            const totalEpisodes = show.totalEpisodes ?? show.total_episodes ?? 0;
+            const publisher = show.publisher || show.name || 'Podcast';
 
-            const cardHtml = `
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card search-result-card h-100">
-                        <div class="card-body">
-                            <div class="d-flex">
-                                <img src="${imageUrl}" alt="${show.name || 'Podcast'}" class="search-result-image rounded me-3">
-                                <div class="flex-grow-1">
-                                    <h6 class="card-title mb-1">${Handlebars.escapeExpression(show.name || 'Untitled Podcast')}</h6>
-                                    <p class="text-muted mb-1 small">${Handlebars.escapeExpression(show.publisher || 'Unknown publisher')}</p>
-                                    <p class="text-muted mb-2 small">${show.totalEpisodes || 0} episodes</p>
-                                    <div class="track-actions mt-2">
-                                        <button class="btn btn-outline-danger btn-sm remove-show-btn"
-                                            data-id="${show.id || ''}"
-                                            data-name="${Handlebars.escapeExpression(show.name || 'Podcast')}"
-                                            title="Remove from My Podcasts"
-                                            aria-label="Remove from My Podcasts">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm view-show-episodes-btn"
-                                            data-id="${show.id || ''}"
-                                            data-name="${Handlebars.escapeExpression(show.name || 'Podcast')}"
-                                            data-image="${imageUrl}"
-                                            title="View Episodes"
-                                            aria-label="View Episodes">
-                                            <i class="fas fa-list"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const templateData = {
+                id: show.id || '',
+                name: show.name || 'Untitled Podcast',
+                publisher,
+                totalEpisodes,
+                imageUrl: imageUrl
+            };
 
-            $container.append(cardHtml);
+            $container.append(this.templates.savedPodcastCard(templateData));
         });
 
         this.renderPagination($pagination, data.total || 0, data.offset || 0, this.podcastsLimit, 'podcasts');
+    },
+
+    async loadSavedEpisodes(offset = 0) {
+        if (!SpotifyAPI.userId) return;
+
+        const $container = $('#saved-episodes-list');
+        const $pagination = $('#saved-episodes-pagination');
+
+        $container.html(`
+            <div class="col-12 text-center text-muted">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading your saved episodes...</p>
+            </div>
+        `);
+
+        try {
+            const response = await SpotifyAPI.getSavedEpisodes(this.savedEpisodesLimit, offset);
+            this.currentSavedEpisodesPage = Math.floor(offset / this.savedEpisodesLimit);
+
+            (response.items || []).forEach((episode) => {
+                if (episode?.id) {
+                    this.savedEpisodeIds.add(episode.id);
+                }
+            });
+
+            this.displaySavedEpisodes(response, $container, $pagination);
+            this.isLoaded.savedEpisodes = true;
+        } catch (error) {
+            console.error('Error loading saved episodes:', error);
+            $container.html(`
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Failed to load saved episodes. Please try again.
+                    </div>
+                </div>
+            `);
+        }
+    },
+
+    async ensureSavedEpisodeIdsLoaded() {
+        if (this.savedEpisodesIndexLoaded || !SpotifyAPI.userId) {
+            return;
+        }
+
+        if (this.savedEpisodesIndexLoading) {
+            return this.savedEpisodesIndexLoading;
+        }
+
+        this.savedEpisodesIndexLoading = (async () => {
+            const pageSize = 50;
+            let offset = 0;
+            let total = null;
+
+            try {
+                do {
+                    const response = await SpotifyAPI.getSavedEpisodes(pageSize, offset);
+                    total = response.total || 0;
+
+                    (response.items || []).forEach((episode) => {
+                        if (episode?.id) {
+                            this.savedEpisodeIds.add(episode.id);
+                        }
+                    });
+
+                    offset += (response.items || []).length;
+                } while (total !== null && offset < total);
+
+                this.savedEpisodesIndexLoaded = true;
+            } finally {
+                this.savedEpisodesIndexLoading = null;
+            }
+        })();
+
+        return this.savedEpisodesIndexLoading;
+    },
+
+    displaySavedEpisodes(data, $container, $pagination) {
+        $container.empty();
+        $pagination.empty();
+
+        if (!data.items || data.items.length === 0) {
+            $container.html(`
+                <div class="col-12 text-center text-muted">
+                    <i class="fas fa-podcast display-4 mb-3"></i>
+                    <p>No saved episodes yet.</p>
+                </div>
+            `);
+            return;
+        }
+
+        data.items.forEach((episode) => {
+            const imageUrl = this.getEpisodeImageUrl(episode, 'https://via.placeholder.com/64?text=Ep');
+            const progressData = this.getEpisodeProgressData(episode);
+            const showName = episode.show?.name || 'Podcast';
+            const publisher = episode.show?.publisher || showName;
+
+            const templateData = {
+                id: episode.id || '',
+                uri: episode.uri || '',
+                episodeName: episode.name || 'Untitled Episode',
+                showId: episode.show?.id || '',
+                showName,
+                publisher,
+                addedAtLabel: episode.addedAt ? this.formatPlayedAt(episode.addedAt) : '',
+                imageUrl: imageUrl,
+                showProgress: progressData.showProgress,
+                progressPercent: progressData.progressPercent,
+                progressLabel: progressData.progressLabel
+            };
+
+            $container.append(this.templates.savedEpisodeCard(templateData));
+        });
+
+        this.applyEpisodeProgressWidths($container);
+
+        this.renderPagination($pagination, data.total || 0, data.offset || 0, this.savedEpisodesLimit, 'savedEpisodes');
     },
 
     async handleSaveShow(event) {
@@ -518,6 +644,7 @@ const Library = {
         state.offset = safeOffset;
 
         try {
+            await this.ensureSavedEpisodeIdsLoaded();
             const response = await SpotifyAPI.getPodcastEpisodes(state.showId, state.limit, safeOffset);
             state.total = response.total || 0;
             state.offset = response.offset || safeOffset;
@@ -543,22 +670,28 @@ const Library = {
         }
 
         items.forEach((episode, index) => {
-            const imageUrl = episode.images && episode.images.length > 0
-                ? episode.images[0].url
-                : this.podcastModalState.imageUrl || 'https://via.placeholder.com/48?text=Ep';
+            const imageUrl = this.getEpisodeImageUrl(episode, this.podcastModalState.imageUrl || 'https://via.placeholder.com/48?text=Ep');
             const duration = this.formatDuration(episode.durationMs || episode.duration_ms || 0);
+            const progressData = this.getEpisodeProgressData(episode);
 
-            $list.append(`
-                <div class="list-group-item d-flex align-items-start gap-3">
-                    <span class="text-muted small" style="min-width:24px; text-align:right;">${this.podcastModalState.offset + index + 1}</span>
-                    <img src="${imageUrl}" alt="${Handlebars.escapeExpression(episode.name || 'Episode')}" width="48" height="48" class="rounded" style="object-fit:cover;">
-                    <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-semibold text-truncate">${Handlebars.escapeExpression(episode.name || 'Untitled Episode')}</div>
-                        <div class="small text-muted">${duration}${episode.releaseDate ? ' • ' + Handlebars.escapeExpression(episode.releaseDate) : ''}</div>
-                    </div>
-                </div>
-            `);
+            const templateData = {
+                displayIndex: this.podcastModalState.offset + index + 1,
+                id: episode.id || '',
+                uri: episode.uri || '',
+                episodeName: episode.name || 'Untitled Episode',
+                imageUrl: imageUrl,
+                duration: duration,
+                releaseDate: episode.releaseDate || '',
+                isSaved: this.savedEpisodeIds.has(episode.id),
+                showProgress: progressData.showProgress,
+                progressPercent: progressData.progressPercent,
+                progressLabel: progressData.progressLabel
+            };
+
+            $list.append(this.templates.podcastEpisodeRow(templateData));
         });
+
+        this.applyEpisodeProgressWidths($list);
     },
 
     updatePodcastModalPagination() {
@@ -820,6 +953,8 @@ const Library = {
                 this.loadLikedSongs(offset);
             } else if (pageType === 'podcasts') {
                 this.loadSavedPodcasts(offset);
+            } else if (pageType === 'savedEpisodes') {
+                this.loadSavedEpisodes(offset);
             }
         });
     },
@@ -950,6 +1085,139 @@ const Library = {
         }
     },
 
+    async handlePlayEpisode(event) {
+        const $button = $(event.currentTarget);
+        const uri = $button.data('uri');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
+
+        if (!uri) {
+            return;
+        }
+
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const deviceId = PlayerModule.deviceId || null;
+            await SpotifyAPI.playTrack(uri, deviceId);
+            Utils.showSuccess(`Playing episode: ${name}`);
+            App.switchTab('player');
+        } catch (error) {
+            console.error('Error playing episode:', error);
+            Utils.showError(error.message || 'Failed to play episode. Make sure you have an active Spotify device.');
+        } finally {
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    async handleSaveEpisode(event) {
+        const $button = $(event.currentTarget);
+        const episodeId = $button.data('id');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
+
+        if (!episodeId) {
+            return;
+        }
+
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.saveEpisodes(episodeId);
+            this.savedEpisodeIds.add(episodeId);
+            this.isLoaded.savedEpisodes = false;
+            Utils.showSuccess(response?.message || `Saved episode: ${name}`);
+
+            if ($('#saved-episodes-content').hasClass('active')) {
+                await this.loadSavedEpisodes(this.currentSavedEpisodesPage * this.savedEpisodesLimit);
+            }
+            if ($('#podcast-episodes-modal').hasClass('show')) {
+                await this.loadPodcastEpisodesPage(this.podcastModalState.offset);
+            }
+        } catch (error) {
+            console.error('Error saving episode:', error);
+            Utils.showError(error.message || 'Failed to save episode.');
+        } finally {
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    async handleRemoveEpisode(event) {
+        const $button = $(event.currentTarget);
+        const episodeId = $button.data('id');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
+
+        if (!episodeId) {
+            return;
+        }
+
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.removeEpisodes(episodeId);
+            this.savedEpisodeIds.delete(episodeId);
+            this.isLoaded.savedEpisodes = false;
+            Utils.showSuccess(response?.message || `Removed saved episode: ${name}`);
+
+            if ($('#saved-episodes-content').hasClass('active')) {
+                await this.loadSavedEpisodes(this.currentSavedEpisodesPage * this.savedEpisodesLimit);
+            }
+            if ($('#podcast-episodes-modal').hasClass('show')) {
+                await this.loadPodcastEpisodesPage(this.podcastModalState.offset);
+            }
+        } catch (error) {
+            console.error('Error removing episode:', error);
+            Utils.showError(error.message || 'Failed to remove saved episode.');
+        } finally {
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    getEpisodeImageUrl(episode, fallback = 'https://via.placeholder.com/48?text=Ep') {
+        const image = episode?.images && episode.images.length > 0
+            ? episode.images[0].url
+            : episode?.show?.images && episode.show.images.length > 0
+                ? episode.show.images[0].url
+                : fallback;
+        return image;
+    },
+
+    getEpisodeProgressData(episode) {
+        const durationMs = episode.durationMs || episode.duration_ms || 0;
+        const resumePositionMs = episode.resumePoint?.resumePositionMs || episode.resume_point?.resume_position_ms || 0;
+        const fullyPlayed = Boolean(episode.resumePoint?.fullyPlayed || episode.resume_point?.fully_played);
+
+        if (!durationMs || (!resumePositionMs && !fullyPlayed)) {
+            return {
+                showProgress: false,
+                progressPercent: 0,
+                progressLabel: ''
+            };
+        }
+
+        const progressPercent = fullyPlayed
+            ? 100
+            : Math.max(0, Math.min(100, Math.round((resumePositionMs / durationMs) * 100)));
+        const progressLabel = fullyPlayed
+            ? 'Finished'
+            : `${this.formatDuration(resumePositionMs)} of ${this.formatDuration(durationMs)}`;
+
+        return {
+            showProgress: true,
+            progressPercent,
+            progressLabel
+        };
+    },
+
+    applyEpisodeProgressWidths($scope) {
+        $scope.find('.js-episode-progress-bar').each((_, element) => {
+            const value = Number($(element).data('progress'));
+            const progress = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+            element.style.width = `${progress}%`;
+        });
+    },
+
     // Format duration from milliseconds to mm:ss
     formatDuration(ms) {
         if (!ms) return '0:00';
@@ -983,15 +1251,20 @@ const Library = {
             playlists: false,
             likedSongs: false,
             recentlyPlayed: false,
-            podcasts: false
+            podcasts: false,
+            savedEpisodes: false
         };
         this.currentPlaylistsPage = 0;
         this.currentLikedSongsPage = 0;
         this.currentPodcastsPage = 0;
+        this.currentSavedEpisodesPage = 0;
         this.playlistsNextOffset = null;
         this.playlistsLoading = false;
         this.recentlyPlayedCursor = null;
         this.recentlyPlayedLoading = false;
+        this.savedEpisodeIds = new Set();
+        this.savedEpisodesIndexLoaded = false;
+        this.savedEpisodesIndexLoading = null;
         this.stopRecentlyPlayedAutoRefresh();
         this.unbindRecentlyPlayedScroll();
         $('#load-more-playlists-wrapper').remove();

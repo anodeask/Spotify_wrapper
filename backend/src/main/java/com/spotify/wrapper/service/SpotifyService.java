@@ -1359,6 +1359,125 @@ public class SpotifyService {
         }
     }
 
+    public ShowEpisodesResponse getSavedEpisodes(String userId, int limit, int offset) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== GET SAVED EPISODES METHOD CALLED ===");
+        logger.debug("userId: {}, limit: {}, offset: {}", userId, limit, offset);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        int sanitizedLimit = Math.max(1, Math.min(limit, 50));
+        int sanitizedOffset = Math.max(0, offset);
+
+        String url = SPOTIFY_API_BASE_URL + "/me/episodes?limit=" + sanitizedLimit + "&offset=" + sanitizedOffset;
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /me/episodes took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = EntityUtils.toString(response.getEntity());
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Get saved episodes request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            SavedEpisodesResponse savedEpisodes = objectMapper.readValue(responseBody, SavedEpisodesResponse.class);
+            ShowEpisodesResponse result = new ShowEpisodesResponse();
+            result.setHref(savedEpisodes.getHref());
+            result.setLimit(savedEpisodes.getLimit());
+            result.setNext(savedEpisodes.getNext());
+            result.setOffset(savedEpisodes.getOffset());
+            result.setPrevious(savedEpisodes.getPrevious());
+            result.setTotal(savedEpisodes.getTotal());
+
+            if (savedEpisodes.getItems() != null) {
+                result.setItems(
+                    savedEpisodes.getItems().stream()
+                        .filter(item -> item != null && item.getEpisode() != null)
+                        .map(item -> {
+                            SearchResultDto.EpisodeDto episode = item.getEpisode();
+                            episode.setAddedAt(item.getAddedAt());
+                            return episode;
+                        })
+                        .collect(java.util.stream.Collectors.toList())
+                );
+            } else {
+                result.setItems(Collections.emptyList());
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== GET SAVED EPISODES METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+            return result;
+        }
+    }
+
+    public void saveEpisodes(String userId, String ids) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== SAVE EPISODES METHOD CALLED ===");
+        logger.debug("userId: {}, ids: {}", userId, ids);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        String normalizedUris = normalizeEpisodeUrisCsv(ids);
+        String url = SPOTIFY_API_BASE_URL + "/me/library?uris=" + URLEncoder.encode(normalizedUris, StandardCharsets.UTF_8);
+
+        HttpPut request = new HttpPut(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = executeWithRateLimitRetry(request, "save episodes")) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API PUT /me/library (episodes) took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Save episodes request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== SAVE EPISODES METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
+    public void removeEpisodes(String userId, String ids) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== REMOVE EPISODES METHOD CALLED ===");
+        logger.debug("userId: {}, ids: {}", userId, ids);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        String normalizedUris = normalizeEpisodeUrisCsv(ids);
+        String url = SPOTIFY_API_BASE_URL + "/me/library?uris=" + URLEncoder.encode(normalizedUris, StandardCharsets.UTF_8);
+
+        HttpDelete request = new HttpDelete(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = executeWithRateLimitRetry(request, "remove episodes")) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API DELETE /me/library (episodes) took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Remove episodes request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== REMOVE EPISODES METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
     private String normalizeShowUrisCsv(String ids) throws IOException {
         if (ids == null || ids.isBlank()) {
             throw new IOException("Show ids are required");
@@ -1400,6 +1519,48 @@ public class SpotifyService {
         }
 
         throw new IllegalArgumentException("Invalid show id or URI: " + token);
+    }
+
+    private String normalizeEpisodeUrisCsv(String ids) throws IOException {
+        if (ids == null || ids.isBlank()) {
+            throw new IOException("Episode ids are required");
+        }
+
+        List<String> normalizedUris = Arrays.stream(ids.split(","))
+                .map(String::trim)
+                .filter(token -> !token.isBlank())
+                .map(this::toEpisodeUri)
+                .distinct()
+                .toList();
+
+        if (normalizedUris.isEmpty()) {
+            throw new IOException("Episode ids are required");
+        }
+
+        if (normalizedUris.size() > 50) {
+            throw new IOException("A maximum of 50 episode IDs is allowed per request");
+        }
+
+        return String.join(",", normalizedUris);
+    }
+
+    private String toEpisodeUri(String token) {
+        String trimmed = token.trim();
+
+        if (trimmed.matches("^[A-Za-z0-9]{22}$")) {
+            return "spotify:episode:" + trimmed;
+        }
+
+        if (trimmed.startsWith("spotify:episode:")) {
+            return trimmed;
+        }
+
+        if (trimmed.startsWith("https://open.spotify.com/episode/")) {
+            String withoutPrefix = trimmed.substring("https://open.spotify.com/episode/".length());
+            return "spotify:episode:" + withoutPrefix.split("\\?")[0];
+        }
+
+        throw new IllegalArgumentException("Invalid episode id or URI: " + token);
     }
     
     // Inner classes for parsing Spotify responses
@@ -1503,6 +1664,44 @@ public class SpotifyService {
         public void setTotal(int total) { this.total = total; }
         public List<SearchResultDto.EpisodeDto> getItems() { return items; }
         public void setItems(List<SearchResultDto.EpisodeDto> items) { this.items = items; }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class SavedEpisodesResponse {
+        private String href;
+        private int limit;
+        private String next;
+        private int offset;
+        private String previous;
+        private int total;
+        private List<SavedEpisodeItem> items;
+
+        public String getHref() { return href; }
+        public void setHref(String href) { this.href = href; }
+        public int getLimit() { return limit; }
+        public void setLimit(int limit) { this.limit = limit; }
+        public String getNext() { return next; }
+        public void setNext(String next) { this.next = next; }
+        public int getOffset() { return offset; }
+        public void setOffset(int offset) { this.offset = offset; }
+        public String getPrevious() { return previous; }
+        public void setPrevious(String previous) { this.previous = previous; }
+        public int getTotal() { return total; }
+        public void setTotal(int total) { this.total = total; }
+        public List<SavedEpisodeItem> getItems() { return items; }
+        public void setItems(List<SavedEpisodeItem> items) { this.items = items; }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class SavedEpisodeItem {
+        @com.fasterxml.jackson.annotation.JsonProperty("added_at")
+        private String addedAt;
+        private SearchResultDto.EpisodeDto episode;
+
+        public String getAddedAt() { return addedAt; }
+        public void setAddedAt(String addedAt) { this.addedAt = addedAt; }
+        public SearchResultDto.EpisodeDto getEpisode() { return episode; }
+        public void setEpisode(SearchResultDto.EpisodeDto episode) { this.episode = episode; }
     }
     
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

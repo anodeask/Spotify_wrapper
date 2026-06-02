@@ -35,6 +35,7 @@ const CONFIG = {
             ADD_TO_QUEUE: '/api/spotify/queue/add',
             MY_PLAYLISTS: '/api/spotify/me/playlists',
             LIKED_SONGS: '/api/spotify/me/tracks',
+            SAVED_EPISODES: '/api/spotify/me/episodes',
             SAVED_SHOWS: '/api/spotify/me/shows',
             RECENTLY_PLAYED: '/api/spotify/me/recently-played',
             ALBUM_TRACKS: '/api/spotify/albums/tracks',

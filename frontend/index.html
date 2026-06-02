@@ -176,6 +176,11 @@
                                     <i class="fas fa-microphone me-1"></i>My Podcasts
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="saved-episodes-tab-btn" data-bs-toggle="tab" data-bs-target="#saved-episodes-content" type="button" role="tab">
+                                    <i class="fas fa-podcast me-1"></i>Saved Episodes
+                                </button>
+                            </li>
                         </ul>
                         
                         <div class="tab-content" id="libraryTabContent">
@@ -231,6 +236,18 @@
                                     </div>
                                 </div>
                                 <div id="podcasts-pagination" class="d-flex justify-content-center mt-4"></div>
+                            </div>
+
+                            <div class="tab-pane fade" id="saved-episodes-content" role="tabpanel" aria-labelledby="saved-episodes-tab-btn">
+                                <div id="saved-episodes-list" class="row">
+                                    <div class="col-12 text-center text-muted">
+                                        <div class="spinner-grow text-success" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading your saved episodes...</p>
+                                    </div>
+                                </div>
+                                <div id="saved-episodes-pagination" class="d-flex justify-content-center mt-4"></div>
                             </div>
                         </div>
                     </div>
@@ -521,6 +538,141 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Saved Podcast Card Template -->
+    <script id="saved-podcast-card-template" type="text/x-handlebars-template">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card search-result-card h-100">
+                <div class="card-body">
+                    <div class="d-flex">
+                        <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">{{truncate name 30}}</h6>
+                            <p class="text-muted mb-1 small">{{truncate publisher 28}}</p>
+                            <p class="text-muted mb-2 small">{{totalEpisodes}} episodes</p>
+                            <div class="track-actions mt-2">
+                                <button class="btn btn-outline-danger btn-sm remove-show-btn"
+                                    data-id="{{id}}"
+                                    data-name="{{name}}"
+                                    title="Remove from My Podcasts"
+                                    aria-label="Remove from My Podcasts">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm view-show-episodes-btn"
+                                    data-id="{{id}}"
+                                    data-name="{{name}}"
+                                    data-image="{{imageUrl}}"
+                                    title="View Episodes"
+                                    aria-label="View Episodes">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Saved Episode Card Template -->
+    <script id="saved-episode-card-template" type="text/x-handlebars-template">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card search-result-card h-100">
+                <div class="card-body">
+                    <div class="d-flex">
+                        <img src="{{imageUrl}}" alt="{{episodeName}}" class="search-result-image rounded me-3">
+                        <div class="flex-grow-1 overflow-hidden">
+                            <h6 class="card-title mb-1 text-truncate">{{episodeName}}</h6>
+                            <p class="text-muted mb-1 small text-truncate">{{showName}}</p>
+                            <p class="text-muted mb-2 small text-truncate">{{publisher}}{{#if addedAtLabel}} • Saved {{addedAtLabel}}{{/if}}</p>
+
+                            {{#if showProgress}}
+                            <div class="mt-2">
+                                <div class="progress" style="height:6px;">
+                                    <div class="progress-bar bg-success js-episode-progress-bar" role="progressbar" data-progress="{{progressPercent}}" aria-valuenow="{{progressPercent}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="small text-muted mt-1">{{progressLabel}}</div>
+                            </div>
+                            {{/if}}
+
+                            <div class="track-actions mt-2">
+                                <button class="btn btn-success btn-sm play-episode-btn"
+                                    data-uri="{{uri}}"
+                                    data-name="{{episodeName}}"
+                                    title="Play Episode"
+                                    aria-label="Play Episode">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm remove-episode-btn"
+                                    data-id="{{id}}"
+                                    data-name="{{episodeName}}"
+                                    title="Remove Saved Episode"
+                                    aria-label="Remove Saved Episode">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm view-show-episodes-btn"
+                                    data-id="{{showId}}"
+                                    data-name="{{showName}}"
+                                    data-image="{{imageUrl}}"
+                                    title="View Podcast Episodes"
+                                    aria-label="View Podcast Episodes">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Podcast Episode Row Template -->
+    <script id="podcast-episode-row-template" type="text/x-handlebars-template">
+        <div class="list-group-item d-flex align-items-start gap-3">
+            <span class="text-muted small" style="min-width:24px; text-align:right;">{{displayIndex}}</span>
+            <img src="{{imageUrl}}" alt="{{episodeName}}" width="48" height="48" class="rounded" style="object-fit:cover;">
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="fw-semibold text-truncate">{{episodeName}}</div>
+                <div class="small text-muted">{{duration}}{{#if releaseDate}} • {{releaseDate}}{{/if}}</div>
+
+                {{#if showProgress}}
+                <div class="mt-2">
+                    <div class="progress" style="height:6px;">
+                        <div class="progress-bar bg-success js-episode-progress-bar" role="progressbar" data-progress="{{progressPercent}}" aria-valuenow="{{progressPercent}}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="small text-muted mt-1">{{progressLabel}}</div>
+                </div>
+                {{/if}}
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                <button class="btn btn-success btn-sm play-episode-btn"
+                    data-uri="{{uri}}"
+                    data-name="{{episodeName}}"
+                    title="Play Episode"
+                    aria-label="Play Episode">
+                    <i class="fas fa-play"></i>
+                </button>
+
+                {{#if isSaved}}
+                <button class="btn btn-outline-danger btn-sm remove-episode-btn"
+                    data-id="{{id}}"
+                    data-name="{{episodeName}}"
+                    title="Remove Saved Episode"
+                    aria-label="Remove Saved Episode">
+                    <i class="fas fa-minus"></i>
+                </button>
+                {{else}}
+                <button class="btn btn-outline-success btn-sm save-episode-btn"
+                    data-id="{{id}}"
+                    data-name="{{episodeName}}"
+                    title="Save Episode"
+                    aria-label="Save Episode">
+                    <i class="fas fa-bookmark"></i>
+                </button>
+                {{/if}}
             </div>
         </div>
     </script>
