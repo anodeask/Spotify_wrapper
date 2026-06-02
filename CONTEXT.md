@@ -1,6 +1,6 @@
 # Spotify Wrapper - Project Context
 
-> **Last Updated:** June 1, 2026
+> **Last Updated:** June 2, 2026
 
 This document provides a comprehensive overview of the Spotify Wrapper project, including architecture, recent changes, and development notes.
 
@@ -25,7 +25,8 @@ This document provides a comprehensive overview of the Spotify Wrapper project, 
 
 A full-stack web application that wraps the Spotify Web API, allowing users to:
 - Search for songs, artists, albums, and playlists
-- View their personal library (playlists, liked songs, recently played)
+- Search for podcasts and browse podcast episodes
+- View their personal library (playlists, liked songs, saved podcasts, recently played)
 - Control playback across connected Spotify devices
 - Manage volume and transfer playback between devices
 
@@ -130,6 +131,7 @@ spotify/
 | Method | Endpoint | Parameters | Description |
 |--------|----------|------------|-------------|
 | GET | `/search` | `userId`, `query`, `type` | Search tracks, artists, albums, playlists |
+| GET | `/podcasts/search` | `userId`, `query`, `limit` | Search podcast shows |
 
 #### Library
 | Method | Endpoint | Parameters | Description |
@@ -138,8 +140,13 @@ spotify/
 | GET | `/me/tracks` | `userId`, `limit`, `offset` | Get user's liked songs |
 | PUT | `/me/tracks` | `userId`, `ids` | Save tracks to user's Liked Songs |
 | DELETE | `/me/tracks` | `userId`, `ids` | Remove tracks from user's Liked Songs |
+| GET | `/me/shows` | `userId`, `limit`, `offset` | Get user's saved podcasts |
+| PUT | `/me/shows` | `userId`, `ids` | Save podcasts to user's library |
+| DELETE | `/me/shows` | `userId`, `ids` | Remove podcasts from user's library |
 | GET | `/me/recently-played` | `userId`, `limit` | Get recently played tracks |
 | GET | `/albums/tracks` | `userId`, `albumId`, `limit`, `offset` | Get tracks for a specific album |
+| GET | `/podcasts/{showId}` | `userId` | Get podcast details |
+| GET | `/podcasts/{showId}/episodes` | `userId`, `limit`, `offset` | Get podcast episodes |
 
 #### Devices
 | Method | Endpoint | Parameters | Description |
@@ -150,7 +157,7 @@ spotify/
 | Method | Endpoint | Parameters | Description |
 |--------|----------|------------|-------------|
 | GET | `/playback` | `userId` | Get current playback state |
-| GET | `/current-track` | `userId` | Get currently playing track |
+| GET | `/current-track` | `userId` | Get currently playing track or podcast episode |
 | GET | `/queue` | `userId` | Get current playback queue |
 | POST | `/play` | `userId`, `deviceId?`, `trackUri?` | Play a track |
 | POST | `/play-playlist` | `userId`, `deviceId?`, `contextUri` | Play playlist/album |
@@ -179,17 +186,20 @@ spotify/
 ### `search.js`
 - Search form handling
 - Results rendering with Handlebars templates
-- Type filtering (track, artist, album, playlist)
-- Supports `All` mode (track + album + playlist grouped sections)
+- Type filtering (track, artist, album, playlist, show)
+- Supports `All` mode (track + album + playlist + podcast grouped sections)
 - Add-to-queue actions for track and album results
 - Uses backend queue contract (`id` + `type`) instead of frontend-only expansion loops
+- Renders podcast cards and podcast actions
 
 ### `library.js`
 - **Recently Played:** Recent tracks with relative timestamps (default sub-tab)
 - **Liked Songs:** Paginated liked songs view
 - **My Playlists:** Paginated playlist view
+- **My Podcasts:** Paginated saved podcast view with save/remove actions and episode modal
 - Lazy loading (loads content only when tab is activated)
 - Add-to-queue actions for track cards in Liked Songs and Recently Played
+- Restores async podcast button state after completion even when no visible rerender occurs
 
 ### `devices.js`
 - Device list rendering
@@ -208,11 +218,13 @@ spotify/
 - Duplicate call prevention (`isUpdating` guard)
 - Current Queue panel rendering and refresh support
 - Queue rows rendered via Handlebars template (`queue-item-template`)
-- Queue rows include album-art thumbnails for queued tracks
+- Queue rows include artwork for queued tracks and podcast episodes
+- Current-track and queue rendering handle podcast episodes through backend fallback data
 
 ### `spotify.js`
 - API wrapper for backend calls
 - Centralized API functions
+- Includes podcast search, saved-shows library, podcast details, episode listing, and save/remove wrappers
 
 ---
 
@@ -262,6 +274,37 @@ const Config = {
 ---
 
 ## 📝 Recent Changes
+
+### June 2, 2026
+
+#### Podcast Phase 1 Delivery
+- Added podcast search, saved podcasts library view, podcast detail fetch, and episode listing support.
+- Added podcast save/remove endpoints and structured success/failure payloads for `PUT/DELETE /api/spotify/me/shows`.
+- Added frontend podcast flows in Search, Library, API wrapper, templates, and modal UI.
+
+#### Playback and Queue Podcast Compatibility
+- Updated playback DTO handling to support podcast episodes alongside tracks.
+- Added backend fallback from `/me/player` to `/me/player/currently-playing?additional_types=episode` when Spotify reports episode playback with `item: null`.
+- Updated queue handling so podcast episodes preserve episode/show artwork in API responses and frontend rendering.
+
+#### Podcast Save Runtime Alignment
+- Validated that live Spotify save/remove behavior works through `/v1/me/library?uris=spotify:show:...`.
+- Replaced the earlier `/v1/me/shows?ids=...` mutation path after runtime 403 failures.
+
+#### Podcast Action UX Fix
+- Updated library podcast save/remove handlers to always restore button state after async completion.
+- Removed dependence on a rerender side effect to clear loading spinners on successful podcast actions.
+
+#### Incidents
+- **Episode item-null response:** Spotify returned `currently_playing_type=episode` with `item: null` from `/me/player`.
+- **Podcast queue artwork loss:** Queue DTO/frontend rendering assumed track album images only.
+- **Podcast save 403:** Live Spotify `PUT /me/shows` returned forbidden while wrapper/backend request flow itself was valid.
+- **Podcast spinner persistence:** Successful save/remove actions could leave buttons disabled and spinning when the active DOM node was not rerendered.
+
+#### Learnings
+- Podcast playback support requires defensive handling of Spotify response shape mismatches.
+- Shared playback and queue DTOs should be generalized early for mixed media types.
+- Successful backend responses are not enough for good UX; async controls need explicit cleanup paths.
 
 ### June 1, 2026
 

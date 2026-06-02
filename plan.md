@@ -2,6 +2,43 @@
 
 ## Implementation Update (May 2026)
 
+### Podcast Phase 1 and Playback Compatibility Update (June 2026)
+- Implemented Podcast Phase 1 across backend and frontend:
+   - podcast search
+   - saved podcasts library tab
+   - podcast details and episode listing
+   - save/remove podcast actions
+- Added backend podcast endpoints:
+   - `GET /api/spotify/podcasts/search`
+   - `GET /api/spotify/podcasts/{showId}`
+   - `GET /api/spotify/podcasts/{showId}/episodes`
+   - `GET /api/spotify/me/shows`
+   - `PUT /api/spotify/me/shows`
+   - `DELETE /api/spotify/me/shows`
+- Updated frontend modules to support podcast discovery and library management in:
+   - `frontend/js/config.js`
+   - `frontend/js/spotify.js`
+   - `frontend/js/search.js`
+   - `frontend/js/library.js`
+   - `frontend/js/player.js`
+   - `frontend/index.html`
+- Fixed current playback for podcast episodes when Spotify `/me/player` returns `currently_playing_type=episode` with `item: null` by adding a backend fallback to `/me/player/currently-playing?additional_types=episode`.
+- Updated queue DTO/frontend rendering so queued podcast episodes preserve and display thumbnails from episode or show images.
+- Switched podcast save/remove operations to Spotify `PUT/DELETE /v1/me/library?uris=spotify:show:...` after `PUT /v1/me/shows?ids=...` returned 403 in live runtime.
+- Fixed podcast save/remove button UX so buttons always exit loading state after async completion instead of depending on a rerender side effect.
+
+#### Incidents (June 2026)
+- **Episode playback payload incident:** Spotify `/me/player` returned `currently_playing_type=episode` with `item: null`, which broke current-track rendering for podcasts.
+- **Queue thumbnail incident:** Queue items containing podcast episodes lost artwork because the queue contract and frontend rendering only handled track album images.
+- **Podcast save endpoint incident:** Spotify `PUT /me/shows` returned 403 in live usage even though read endpoints succeeded for the same token.
+- **Podcast button state incident:** Save/remove buttons could remain stuck in loading state when the clicked DOM node was not replaced after a successful request.
+
+#### Learnings (June 2026)
+- Spotify playback responses for episodes are not always shape-stable; fallback reads are necessary when `currently_playing_type` and `item` disagree.
+- Queue/current-track DTOs should model both tracks and episodes instead of assuming album-backed music responses.
+- Live endpoint behavior matters more than endpoint naming symmetry; save/remove podcast operations should follow the path proven to work in runtime.
+- Async button state must be restored explicitly in success and failure paths; rerender-dependent cleanup is fragile.
+
 ### Liked Tracks Contract and UX Update (June 2026)
 - Confirmed runtime path for liked-track save/remove now uses Spotify `PUT/DELETE /v1/me/library?uris=...` (not deprecated `/v1/me/tracks`).
 - Added explicit backend JSON responses for liked-track mutation endpoints:

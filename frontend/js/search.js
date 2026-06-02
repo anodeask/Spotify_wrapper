@@ -18,6 +18,7 @@ const SearchModule = {
             artist: Handlebars.compile($('#artist-template').html()),
             album: Handlebars.compile($('#album-template').html()),
             playlist: Handlebars.compile($('#playlist-template').html()),
+            show: Handlebars.compile($('#podcast-template').html()),
             noResults: Handlebars.compile($('#no-results-template').html()),
             error: Handlebars.compile($('#error-template').html())
         };
@@ -127,7 +128,7 @@ const SearchModule = {
     // Perform the actual search
     async performSearch(query) {
         const selectedType = $('#search-type').val();
-        const apiType = selectedType === 'all' ? 'track,album,playlist' : selectedType;
+        const apiType = selectedType === 'all' ? 'track,album,playlist,show' : selectedType;
         
         this.showLoading(true);
         this.clearResults();
@@ -182,7 +183,8 @@ const SearchModule = {
         const sections = [
             this.renderResultsSection('Songs', 'track', results.tracks?.items || []),
             this.renderResultsSection('Albums', 'album', results.albums?.items || []),
-            this.renderResultsSection('Playlists', 'playlist', results.playlists?.items || [])
+            this.renderResultsSection('Playlists', 'playlist', results.playlists?.items || []),
+            this.renderResultsSection('Podcasts', 'show', results.shows?.items || [])
         ].filter(Boolean);
 
         return sections.join('');
@@ -267,6 +269,16 @@ const SearchModule = {
                     imageUrl: Utils.getImageUrl(item.images, 150),
                     owner: item.owner?.display_name || 'Unknown',
                     totalTracks: item.tracks?.total || 0
+                };
+
+            case 'show':
+                return {
+                    id: item.id,
+                    name: item.name,
+                    uri: item.uri,
+                    imageUrl: Utils.getImageUrl(item.images, 150),
+                    publisher: item.publisher || 'Unknown publisher',
+                    totalEpisodes: item.total_episodes || item.totalEpisodes || 0
                 };
                 
             default:

@@ -8,23 +8,23 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class QueueDto {
     @JsonProperty("currently_playing")
-    private SearchResultDto.TrackDto currentlyPlaying;
+    private PlaybackDto.ItemDto currentlyPlaying;
 
-    private List<SearchResultDto.TrackDto> queue;
+    private List<PlaybackDto.ItemDto> queue;
 
-    public SearchResultDto.TrackDto getCurrentlyPlaying() {
+    public PlaybackDto.ItemDto getCurrentlyPlaying() {
         return currentlyPlaying;
     }
 
-    public void setCurrentlyPlaying(SearchResultDto.TrackDto currentlyPlaying) {
+    public void setCurrentlyPlaying(PlaybackDto.ItemDto currentlyPlaying) {
         this.currentlyPlaying = currentlyPlaying;
     }
 
-    public List<SearchResultDto.TrackDto> getQueue() {
+    public List<PlaybackDto.ItemDto> getQueue() {
         return queue;
     }
 
-    public void setQueue(List<SearchResultDto.TrackDto> queue) {
+    public void setQueue(List<PlaybackDto.ItemDto> queue) {
         this.queue = queue;
     }
 }

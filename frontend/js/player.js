@@ -102,8 +102,21 @@ const PlayerModule = {
         this.isUpdating = true;
         try {
             const response = await SpotifyAPI.getCurrentTrack();
+            const currentlyPlayingType = response?.currently_playing_type || response?.currentlyPlayingType;
             
-            if (response && response.item) {
+            if (response && (response.item || currentlyPlayingType === 'episode')) {
+                if (!response.item && currentlyPlayingType === 'episode') {
+                    response.item = {
+                        name: 'Podcast episode',
+                        duration_ms: 0,
+                        durationMs: 0,
+                        images: [],
+                        show: {
+                            publisher: 'Podcast'
+                        }
+                    };
+                }
+
                 this.currentTrack = response.item;
                 this.isPlaying = response.is_playing;
                 this.deviceId = response.device?.id || null;
@@ -138,13 +151,22 @@ const PlayerModule = {
     // Display current track information
     displayCurrentTrack(trackData) {
         const track = trackData.item;
+        const currentlyPlayingType = trackData.currently_playing_type || trackData.currentlyPlayingType || 'track';
+        const isEpisode = currentlyPlayingType === 'episode';
         const progressMs = trackData.progress_ms || 0;
-        const durationMs = track.duration_ms;
-        const progressPercent = (progressMs / durationMs) * 100;
+        const durationMs = track.duration_ms || track.durationMs || 0;
+        const progressPercent = durationMs > 0 ? (progressMs / durationMs) * 100 : 0;
         
-        const imageUrl = Utils.getImageUrl(track.album?.images, 300);
-        const artists = track.artists.map(artist => artist.name).join(', ');
-        const artistLinks = Utils.formatArtistLinks(track.artists);
+        const imageUrl = Utils.getImageUrl(
+            track.album?.images || track.images || track.show?.images,
+            300
+        );
+        const artists = isEpisode
+            ? (track.show?.publisher || track.show?.name || 'Podcast')
+            : ((track.artists || []).map(artist => artist.name).join(', ') || 'Unknown Artist');
+        const artistLinks = isEpisode
+            ? Utils.escapeHtml(artists)
+            : Utils.formatArtistLinks(track.artists || []);
         
         // Update track info
         $('#track-image').attr('src', imageUrl).attr('alt', track.name);
@@ -255,11 +277,15 @@ const PlayerModule = {
         }
 
         const html = queue.slice(0, 10).map((track, index) => {
+            const imageCandidates = track?.album?.images || track?.images || track?.show?.images || [];
+            const episodeSubtitle = track?.show?.publisher || track?.show?.name || 'Podcast';
             const templateData = {
                 index: index + 1,
                 name: track?.name || 'Unknown Track',
-                artistLinks: Utils.formatArtistLinks(track?.artists || []),
-                imageUrl: Utils.getImageUrl(track?.album?.images, 64)
+                artistLinks: (track?.artists && track.artists.length)
+                    ? Utils.formatArtistLinks(track.artists)
+                    : Utils.escapeHtml(episodeSubtitle),
+                imageUrl: Utils.getImageUrl(imageCandidates, 64)
             };
 
             if (this.templates.queueItem) {

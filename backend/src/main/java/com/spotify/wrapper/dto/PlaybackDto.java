@@ -18,7 +18,7 @@ public class PlaybackDto {
     private long progressMs;
     @JsonProperty("is_playing")
     private boolean isPlaying;
-    private SearchResultDto.TrackDto item;
+    private ItemDto item;
     @JsonProperty("currently_playing_type")
     private String currentlyPlayingType;
     
@@ -87,11 +87,11 @@ public class PlaybackDto {
         isPlaying = playing;
     }
     
-    public SearchResultDto.TrackDto getItem() {
+    public ItemDto getItem() {
         return item;
     }
     
-    public void setItem(SearchResultDto.TrackDto item) {
+    public void setItem(ItemDto item) {
         this.item = item;
     }
     
@@ -222,6 +222,83 @@ public class PlaybackDto {
         
         public void setUri(String uri) {
             this.uri = uri;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ItemDto {
+        private String id;
+        private String name;
+        private String uri;
+        @JsonProperty("duration_ms")
+        private long durationMs;
+        private SearchResultDto.ArtistDto[] artists;
+        private SearchResultDto.AlbumDto album;
+        private SearchResultDto.ImageDto[] images;
+        private SearchResultDto.ShowDto show;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getUri() {
+            return uri;
+        }
+
+        public void setUri(String uri) {
+            this.uri = uri;
+        }
+
+        public long getDurationMs() {
+            return durationMs;
+        }
+
+        public void setDurationMs(long durationMs) {
+            this.durationMs = durationMs;
+        }
+
+        public SearchResultDto.ArtistDto[] getArtists() {
+            return artists;
+        }
+
+        public void setArtists(SearchResultDto.ArtistDto[] artists) {
+            this.artists = artists;
+        }
+
+        public SearchResultDto.AlbumDto getAlbum() {
+            return album;
+        }
+
+        public void setAlbum(SearchResultDto.AlbumDto album) {
+            this.album = album;
+        }
+
+        public SearchResultDto.ImageDto[] getImages() {
+            return images;
+        }
+
+        public void setImages(SearchResultDto.ImageDto[] images) {
+            this.images = images;
+        }
+
+        public SearchResultDto.ShowDto getShow() {
+            return show;
+        }
+
+        public void setShow(SearchResultDto.ShowDto show) {
+            this.show = show;
         }
     }
 }

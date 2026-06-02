@@ -364,6 +364,133 @@ public class SpotifyController {
         payload.put("ids", ids);
         return payload;
     }
+
+    @GetMapping("/podcasts/search")
+    public ResponseEntity<SearchResultDto.ShowsDto> searchPodcasts(
+            @RequestParam String userId,
+            @RequestParam String query,
+            @RequestParam(defaultValue = "10") int limit) {
+        logger.info("Podcast search request - userId: {}, query: '{}', limit: {}", userId, query, limit);
+
+        try {
+            SearchResultDto result = spotifyService.search(userId, query, "show", limit);
+            SearchResultDto.ShowsDto shows = result != null ? result.getShows() : null;
+            if (shows == null) {
+                shows = new SearchResultDto.ShowsDto();
+            }
+            return ResponseEntity.ok(shows);
+        } catch (IOException e) {
+            logger.error("Podcast search failed for userId: {}, query: '{}'", userId, query, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/podcasts/{showId}")
+    public ResponseEntity<SearchResultDto.ShowDto> getPodcast(
+            @RequestParam String userId,
+            @PathVariable String showId) {
+        logger.info("Get podcast request - userId: {}, showId: {}", userId, showId);
+
+        try {
+            return ResponseEntity.ok(spotifyService.getShow(userId, showId));
+        } catch (IOException e) {
+            logger.error("Failed to get podcast for userId: {}, showId: {}", userId, showId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/podcasts/{showId}/episodes")
+    public ResponseEntity<SpotifyService.ShowEpisodesResponse> getPodcastEpisodes(
+            @RequestParam String userId,
+            @PathVariable String showId,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        logger.info("Get podcast episodes request - userId: {}, showId: {}, limit: {}, offset: {}", userId, showId, limit, offset);
+
+        try {
+            return ResponseEntity.ok(spotifyService.getShowEpisodes(userId, showId, limit, offset));
+        } catch (IOException e) {
+            logger.error("Failed to get podcast episodes for userId: {}, showId: {}", userId, showId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/me/shows")
+    public ResponseEntity<SearchResultDto.ShowsDto> getSavedShows(
+            @RequestParam String userId,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        logger.info("Get saved podcasts request - userId: {}, limit: {}, offset: {}", userId, limit, offset);
+
+        try {
+            SearchResultDto.ShowsDto shows = spotifyService.getSavedShows(userId, limit, offset);
+            logger.info("Saved podcasts retrieved successfully for userId: {}, found {} shows",
+                    userId, shows.getItems() != null ? shows.getItems().size() : 0);
+            return ResponseEntity.ok(shows);
+        } catch (IOException e) {
+            logger.error("Failed to get saved podcasts for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PutMapping("/me/shows")
+    public ResponseEntity<Map<String, Object>> saveShows(
+            @RequestParam String userId,
+            @RequestParam String ids) {
+        logger.info("Save podcasts request - userId: {}, ids: {}", userId, ids);
+
+        if (ids == null || ids.isBlank()) {
+            return ResponseEntity.badRequest().body(showsResponse("failure", 400, "Show ids are required.", ids));
+        }
+
+        try {
+            spotifyService.saveShows(userId, ids);
+            return ResponseEntity.ok(showsResponse("success", 200, "Podcasts saved successfully.", ids));
+        } catch (SpotifyApiException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(showsResponse("failure", e.getStatusCode(), e.getMessage(), ids));
+        } catch (IOException e) {
+            logger.error("Failed to save podcasts for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(showsResponse("failure", 500, "Failed to save podcasts.", ids));
+        } catch (RuntimeException e) {
+            logger.error("Runtime error while saving podcasts for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(showsResponse("failure", 500, e.getMessage(), ids));
+        }
+    }
+
+    @DeleteMapping("/me/shows")
+    public ResponseEntity<Map<String, Object>> removeShows(
+            @RequestParam String userId,
+            @RequestParam String ids) {
+        logger.info("Remove podcasts request - userId: {}, ids: {}", userId, ids);
+
+        if (ids == null || ids.isBlank()) {
+            return ResponseEntity.badRequest().body(showsResponse("failure", 400, "Show ids are required.", ids));
+        }
+
+        try {
+            spotifyService.removeShows(userId, ids);
+            return ResponseEntity.ok(showsResponse("success", 200, "Podcasts removed successfully.", ids));
+        } catch (SpotifyApiException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .body(showsResponse("failure", e.getStatusCode(), e.getMessage(), ids));
+        } catch (IOException e) {
+            logger.error("Failed to remove podcasts for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(showsResponse("failure", 500, "Failed to remove podcasts.", ids));
+        } catch (RuntimeException e) {
+            logger.error("Runtime error while removing podcasts for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().body(showsResponse("failure", 500, e.getMessage(), ids));
+        }
+    }
+
+    private Map<String, Object> showsResponse(String result, int status, String message, String ids) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("result", result);
+        payload.put("status", status);
+        payload.put("message", message);
+        payload.put("ids", ids);
+        return payload;
+    }
     
     @GetMapping("/me/recently-played")
     public ResponseEntity<SpotifyService.RecentlyPlayedResponse> getRecentlyPlayed(

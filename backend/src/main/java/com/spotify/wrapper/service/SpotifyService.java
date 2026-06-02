@@ -226,6 +226,15 @@ public class SpotifyService {
                         .collect(java.util.stream.Collectors.toList())
                 );
             }
+
+            // Filter out null items from show results
+            if (result.getShows() != null && result.getShows().getItems() != null) {
+                result.getShows().setItems(
+                    result.getShows().getItems().stream()
+                        .filter(Objects::nonNull)
+                        .collect(java.util.stream.Collectors.toList())
+                );
+            }
             
             if (result.getError() != null) {
                 int errorStatus = result.getError().getStatus() > 0 ? result.getError().getStatus() : 400;
@@ -312,9 +321,53 @@ public class SpotifyService {
             }
             
             PlaybackDto playback = objectMapper.readValue(responseBody, PlaybackDto.class);
+
+            if (playback != null
+                    && "episode".equalsIgnoreCase(playback.getCurrentlyPlayingType())
+                    && playback.getItem() == null) {
+                logger.info("/me/player returned item=null for episode playback. Attempting fallback via /me/player/currently-playing.");
+                PlaybackDto fallbackPlayback = fetchCurrentlyPlayingEpisode(accessToken);
+                if (fallbackPlayback != null && fallbackPlayback.getItem() != null) {
+                    playback.setItem(fallbackPlayback.getItem());
+                    if (fallbackPlayback.getProgressMs() > 0) {
+                        playback.setProgressMs(fallbackPlayback.getProgressMs());
+                    }
+                    logger.info("Episode metadata recovered via fallback currently-playing endpoint.");
+                } else {
+                    logger.warn("Fallback currently-playing endpoint also returned null item for episode playback.");
+                }
+            }
+
             long endTime = System.currentTimeMillis();
             logger.info("=== GET CURRENT PLAYBACK METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
             return playback;
+        }
+    }
+
+    private PlaybackDto fetchCurrentlyPlayingEpisode(String accessToken) {
+        String url = SPOTIFY_API_BASE_URL + "/me/player/currently-playing?additional_types=episode";
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 204) {
+                EntityUtils.consume(response.getEntity());
+                return null;
+            }
+
+            String responseBody = EntityUtils.toString(response.getEntity());
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.warn("Fallback currently-playing request failed with status {}: {}", statusCode, responseBody);
+                return null;
+            }
+
+            return objectMapper.readValue(responseBody, PlaybackDto.class);
+        } catch (Exception ex) {
+            logger.warn("Fallback currently-playing request threw exception", ex);
+            return null;
         }
     }
     
@@ -1112,6 +1165,242 @@ public class SpotifyService {
             return result;
         }
     }
+
+    public SearchResultDto.ShowsDto getSavedShows(String userId, int limit, int offset) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== GET SAVED SHOWS METHOD CALLED ===");
+        logger.debug("userId: {}, limit: {}, offset: {}", userId, limit, offset);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        int sanitizedLimit = Math.max(1, Math.min(limit, 50));
+        int sanitizedOffset = Math.max(0, offset);
+
+        String url = SPOTIFY_API_BASE_URL + "/me/shows?limit=" + sanitizedLimit + "&offset=" + sanitizedOffset;
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /me/shows took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = EntityUtils.toString(response.getEntity());
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Get saved shows request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            SavedShowsResponse savedShows = objectMapper.readValue(responseBody, SavedShowsResponse.class);
+            SearchResultDto.ShowsDto result = new SearchResultDto.ShowsDto();
+            result.setHref(savedShows.getHref());
+            result.setLimit(savedShows.getLimit());
+            result.setNext(savedShows.getNext());
+            result.setOffset(savedShows.getOffset());
+            result.setPrevious(savedShows.getPrevious());
+            result.setTotal(savedShows.getTotal());
+
+            if (savedShows.getItems() != null) {
+                result.setItems(
+                    savedShows.getItems().stream()
+                        .filter(item -> item != null && item.getShow() != null)
+                        .map(SavedShowItem::getShow)
+                        .collect(java.util.stream.Collectors.toList())
+                );
+            } else {
+                result.setItems(Collections.emptyList());
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== GET SAVED SHOWS METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+            return result;
+        }
+    }
+
+    public SearchResultDto.ShowDto getShow(String userId, String showId) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== GET SHOW METHOD CALLED ===");
+        logger.debug("userId: {}, showId: {}", userId, showId);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        String encodedShowId = URLEncoder.encode(showId, StandardCharsets.UTF_8);
+        String url = SPOTIFY_API_BASE_URL + "/shows/" + encodedShowId;
+
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /shows/{id} took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = EntityUtils.toString(response.getEntity());
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Get show request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            SearchResultDto.ShowDto result = objectMapper.readValue(responseBody, SearchResultDto.ShowDto.class);
+            long endTime = System.currentTimeMillis();
+            logger.info("=== GET SHOW METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+            return result;
+        }
+    }
+
+    public ShowEpisodesResponse getShowEpisodes(String userId, String showId, int limit, int offset) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== GET SHOW EPISODES METHOD CALLED ===");
+        logger.debug("userId: {}, showId: {}, limit: {}, offset: {}", userId, showId, limit, offset);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        int sanitizedLimit = Math.max(1, Math.min(limit, 50));
+        int sanitizedOffset = Math.max(0, offset);
+        String encodedShowId = URLEncoder.encode(showId, StandardCharsets.UTF_8);
+
+        String url = SPOTIFY_API_BASE_URL + "/shows/" + encodedShowId + "/episodes?limit=" + sanitizedLimit + "&offset=" + sanitizedOffset;
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /shows/{id}/episodes took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = EntityUtils.toString(response.getEntity());
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Get show episodes request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            ShowEpisodesResponse result = objectMapper.readValue(responseBody, ShowEpisodesResponse.class);
+            if (result.getItems() != null) {
+                result.setItems(
+                    result.getItems().stream()
+                        .filter(Objects::nonNull)
+                        .collect(java.util.stream.Collectors.toList())
+                );
+            } else {
+                result.setItems(Collections.emptyList());
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== GET SHOW EPISODES METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+            return result;
+        }
+    }
+
+    public void saveShows(String userId, String ids) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== SAVE SHOWS METHOD CALLED ===");
+        logger.debug("userId: {}, ids: {}", userId, ids);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        String normalizedUris = normalizeShowUrisCsv(ids);
+        String url = SPOTIFY_API_BASE_URL + "/me/library?uris=" + URLEncoder.encode(normalizedUris, StandardCharsets.UTF_8);
+
+        HttpPut request = new HttpPut(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = executeWithRateLimitRetry(request, "save shows")) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API PUT /me/library (shows) took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Save shows request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== SAVE SHOWS METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
+    public void removeShows(String userId, String ids) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== REMOVE SHOWS METHOD CALLED ===");
+        logger.debug("userId: {}, ids: {}", userId, ids);
+
+        String accessToken = tokenService.getAccessToken(userId);
+        String normalizedUris = normalizeShowUrisCsv(ids);
+        String url = SPOTIFY_API_BASE_URL + "/me/library?uris=" + URLEncoder.encode(normalizedUris, StandardCharsets.UTF_8);
+
+        HttpDelete request = new HttpDelete(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = executeWithRateLimitRetry(request, "remove shows")) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API DELETE /me/library (shows) took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.error("Remove shows request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== REMOVE SHOWS METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
+    private String normalizeShowUrisCsv(String ids) throws IOException {
+        if (ids == null || ids.isBlank()) {
+            throw new IOException("Show ids are required");
+        }
+
+        List<String> normalizedUris = Arrays.stream(ids.split(","))
+                .map(String::trim)
+                .filter(token -> !token.isBlank())
+                .map(this::toShowUri)
+                .distinct()
+                .toList();
+
+        if (normalizedUris.isEmpty()) {
+            throw new IOException("Show ids are required");
+        }
+
+        if (normalizedUris.size() > 50) {
+            throw new IOException("A maximum of 50 show IDs is allowed per request");
+        }
+
+        return String.join(",", normalizedUris);
+    }
+
+    private String toShowUri(String token) {
+        String trimmed = token.trim();
+
+        if (trimmed.startsWith("spotify:show:")) {
+            return trimmed;
+        }
+
+        if (trimmed.matches("^[A-Za-z0-9]{22}$")) {
+            return "spotify:show:" + trimmed;
+        }
+
+        if (trimmed.startsWith("https://open.spotify.com/show/")) {
+            String withoutPrefix = trimmed.substring("https://open.spotify.com/show/".length());
+            String id = withoutPrefix.split("\\?")[0];
+            return "spotify:show:" + id;
+        }
+
+        throw new IllegalArgumentException("Invalid show id or URI: " + token);
+    }
     
     // Inner classes for parsing Spotify responses
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
@@ -1150,6 +1439,70 @@ public class SpotifyService {
         public void setAddedAt(String addedAt) { this.addedAt = addedAt; }
         public SearchResultDto.TrackDto getTrack() { return track; }
         public void setTrack(SearchResultDto.TrackDto track) { this.track = track; }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class SavedShowsResponse {
+        private String href;
+        private int limit;
+        private String next;
+        private int offset;
+        private String previous;
+        private int total;
+        private List<SavedShowItem> items;
+
+        public String getHref() { return href; }
+        public void setHref(String href) { this.href = href; }
+        public int getLimit() { return limit; }
+        public void setLimit(int limit) { this.limit = limit; }
+        public String getNext() { return next; }
+        public void setNext(String next) { this.next = next; }
+        public int getOffset() { return offset; }
+        public void setOffset(int offset) { this.offset = offset; }
+        public String getPrevious() { return previous; }
+        public void setPrevious(String previous) { this.previous = previous; }
+        public int getTotal() { return total; }
+        public void setTotal(int total) { this.total = total; }
+        public List<SavedShowItem> getItems() { return items; }
+        public void setItems(List<SavedShowItem> items) { this.items = items; }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class SavedShowItem {
+        @com.fasterxml.jackson.annotation.JsonProperty("added_at")
+        private String addedAt;
+        private SearchResultDto.ShowDto show;
+
+        public String getAddedAt() { return addedAt; }
+        public void setAddedAt(String addedAt) { this.addedAt = addedAt; }
+        public SearchResultDto.ShowDto getShow() { return show; }
+        public void setShow(SearchResultDto.ShowDto show) { this.show = show; }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ShowEpisodesResponse {
+        private String href;
+        private int limit;
+        private String next;
+        private int offset;
+        private String previous;
+        private int total;
+        private List<SearchResultDto.EpisodeDto> items;
+
+        public String getHref() { return href; }
+        public void setHref(String href) { this.href = href; }
+        public int getLimit() { return limit; }
+        public void setLimit(int limit) { this.limit = limit; }
+        public String getNext() { return next; }
+        public void setNext(String next) { this.next = next; }
+        public int getOffset() { return offset; }
+        public void setOffset(int offset) { this.offset = offset; }
+        public String getPrevious() { return previous; }
+        public void setPrevious(String previous) { this.previous = previous; }
+        public int getTotal() { return total; }
+        public void setTotal(int total) { this.total = total; }
+        public List<SearchResultDto.EpisodeDto> getItems() { return items; }
+        public void setItems(List<SearchResultDto.EpisodeDto> items) { this.items = items; }
     }
     
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

@@ -10,6 +10,7 @@ public class SearchResultDto {
     private TracksDto tracks;
     private AlbumsDto albums;
     private ArtistsDto artists;
+    private ShowsDto shows;
     private ErrorDto error;
     
     // Getters and Setters
@@ -43,6 +44,14 @@ public class SearchResultDto {
     
     public void setArtists(ArtistsDto artists) {
         this.artists = artists;
+    }
+
+    public ShowsDto getShows() {
+        return shows;
+    }
+
+    public void setShows(ShowsDto shows) {
+        this.shows = shows;
     }
     
     public ErrorDto getError() {
@@ -433,6 +442,73 @@ public class SearchResultDto {
             return total;
         }
         
+        public void setTotal(int total) {
+            this.total = total;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ShowsDto {
+        private List<ShowDto> items;
+        private String href;
+        private int limit;
+        private String next;
+        private int offset;
+        private String previous;
+        private int total;
+
+        public List<ShowDto> getItems() {
+            return items;
+        }
+
+        public void setItems(List<ShowDto> items) {
+            this.items = items;
+        }
+
+        public String getHref() {
+            return href;
+        }
+
+        public void setHref(String href) {
+            this.href = href;
+        }
+
+        public int getLimit() {
+            return limit;
+        }
+
+        public void setLimit(int limit) {
+            this.limit = limit;
+        }
+
+        public String getNext() {
+            return next;
+        }
+
+        public void setNext(String next) {
+            this.next = next;
+        }
+
+        public int getOffset() {
+            return offset;
+        }
+
+        public void setOffset(int offset) {
+            this.offset = offset;
+        }
+
+        public String getPrevious() {
+            return previous;
+        }
+
+        public void setPrevious(String previous) {
+            this.previous = previous;
+        }
+
+        public int getTotal() {
+            return total;
+        }
+
         public void setTotal(int total) {
             this.total = total;
         }
@@ -923,6 +999,210 @@ public class SearchResultDto {
         
         public void setUri(String uri) {
             this.uri = uri;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ShowDto {
+        private String id;
+        private String name;
+        private String description;
+        private ImageDto[] images;
+        @JsonProperty("publisher")
+        private String publisher;
+        @JsonProperty("media_type")
+        private String mediaType;
+        @JsonProperty("total_episodes")
+        private int totalEpisodes;
+        private String href;
+        private String type;
+        private String uri;
+        @JsonProperty("external_urls")
+        private ExternalUrls externalUrls;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public ImageDto[] getImages() {
+            return images;
+        }
+
+        public void setImages(ImageDto[] images) {
+            this.images = images;
+        }
+
+        public String getPublisher() {
+            return publisher;
+        }
+
+        public void setPublisher(String publisher) {
+            this.publisher = publisher;
+        }
+
+        public String getMediaType() {
+            return mediaType;
+        }
+
+        public void setMediaType(String mediaType) {
+            this.mediaType = mediaType;
+        }
+
+        public int getTotalEpisodes() {
+            return totalEpisodes;
+        }
+
+        public void setTotalEpisodes(int totalEpisodes) {
+            this.totalEpisodes = totalEpisodes;
+        }
+
+        public String getHref() {
+            return href;
+        }
+
+        public void setHref(String href) {
+            this.href = href;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getUri() {
+            return uri;
+        }
+
+        public void setUri(String uri) {
+            this.uri = uri;
+        }
+
+        public ExternalUrls getExternalUrls() {
+            return externalUrls;
+        }
+
+        public void setExternalUrls(ExternalUrls externalUrls) {
+            this.externalUrls = externalUrls;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class EpisodeDto {
+        private String id;
+        private String name;
+        private String description;
+        private ImageDto[] images;
+        @JsonProperty("duration_ms")
+        private long durationMs;
+        @JsonProperty("release_date")
+        private String releaseDate;
+        private String href;
+        private String type;
+        private String uri;
+        @JsonProperty("external_urls")
+        private ExternalUrls externalUrls;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public ImageDto[] getImages() {
+            return images;
+        }
+
+        public void setImages(ImageDto[] images) {
+            this.images = images;
+        }
+
+        public long getDurationMs() {
+            return durationMs;
+        }
+
+        public void setDurationMs(long durationMs) {
+            this.durationMs = durationMs;
+        }
+
+        public String getReleaseDate() {
+            return releaseDate;
+        }
+
+        public void setReleaseDate(String releaseDate) {
+            this.releaseDate = releaseDate;
+        }
+
+        public String getHref() {
+            return href;
+        }
+
+        public void setHref(String href) {
+            this.href = href;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getUri() {
+            return uri;
+        }
+
+        public void setUri(String uri) {
+            this.uri = uri;
+        }
+
+        public ExternalUrls getExternalUrls() {
+            return externalUrls;
+        }
+
+        public void setExternalUrls(ExternalUrls externalUrls) {
+            this.externalUrls = externalUrls;
         }
     }
     

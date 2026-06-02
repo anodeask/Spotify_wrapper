@@ -1,9 +1,25 @@
 # Spotify Web API Wrapper
 
-A full-stack web application that wraps the Spotify Web API, allowing users to search for music, manage playlists, control playback, and view their library.
+A full-stack web application that wraps the Spotify Web API, allowing users to search for music and podcasts, manage library items, control playback, and view their library.
 
 ## Recent Changes (June 2026)
 
+- Implemented Podcast Phase 1 across backend and frontend:
+   - podcast search
+   - saved podcasts library tab
+   - podcast details and episode listing
+   - save/remove podcast actions
+- Added backend podcast endpoints:
+   - `GET /api/spotify/podcasts/search`
+   - `GET /api/spotify/podcasts/{showId}`
+   - `GET /api/spotify/podcasts/{showId}/episodes`
+   - `GET /api/spotify/me/shows`
+   - `PUT /api/spotify/me/shows`
+   - `DELETE /api/spotify/me/shows`
+- Fixed current-track episode handling by adding a backend fallback to Spotify `/me/player/currently-playing?additional_types=episode` when `/me/player` reports episode playback with `item: null`.
+- Updated queue handling so podcast episodes return and render artwork from episode/show image data.
+- Switched podcast save/remove operations to Spotify `/v1/me/library?uris=spotify:show:...` after live 403 failures on `/v1/me/shows`.
+- Fixed podcast save/remove button UX so the clicked button exits loading state even when the current view does not rerender.
 - Fixed liked-track mutation runtime drift and validated that save/remove requests call Spotify `/v1/me/library?uris=...` in the active backend process.
 - Added explicit backend success/failure payloads for:
    - `PUT /api/spotify/me/tracks`
@@ -18,10 +34,17 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 ### Incidents and Learnings (June 2026)
 
 #### Incidents
+- Spotify `/me/player` sometimes returned `currently_playing_type=episode` with `item: null`, which broke podcast current-track rendering until the fallback path was added.
+- Podcast queue rows initially lost thumbnails because episode/show artwork was not preserved through the queue DTO and frontend renderer.
+- Spotify `PUT /me/shows` returned 403 in live runtime, requiring a switch to `/me/library?uris=spotify:show:...` for podcast save/remove operations.
+- Podcast save/remove buttons could remain stuck in loading state after success when the clicked button was not replaced by a rerender.
 - Runtime drift caused repeated 403 responses because an older backend process was still calling Spotify `/v1/me/tracks` while source had moved to `/v1/me/library`.
 - Liked-track mutation operations returned no explicit success payload initially, resulting in missing user-facing confirmation in the client.
 
 #### Learnings
+- Spotify playback responses for podcast episodes are not always shape-stable; defensive fallbacks are required for reliable episode rendering.
+- Shared playback and queue contracts should support both tracks and episodes instead of assuming album-based music payloads.
+- Async UI controls need explicit success/failure cleanup; relying on a list rerender to reset button state is fragile.
 - Verify active runtime behavior with logs and process checks whenever observed API behavior does not match the current code.
 - Use explicit mutation response contracts (`result`, `status`, `message`, `ids`) so frontend success/failure handling is consistent.
 - Keep a global notification fallback so confirmation messages remain visible even if local module alert containers are not present.
@@ -51,17 +74,18 @@ A full-stack web application that wraps the Spotify Web API, allowing users to s
 
 ## Features
 
-- 🎵 **Search**: Search for songs, artists, albums, and playlists
-- 📚 **Library**: View your playlists, liked songs, and recently played tracks
+- 🎵 **Search**: Search for songs, artists, albums, playlists, and podcasts
+- 📚 **Library**: View your playlists, liked songs, saved podcasts, and recently played tracks
 - 🎮 **Playback Control**: Play, pause, skip tracks, seek with clickable progress bar, +/- 5/10/15s buttons, volume step up/down, and hover tooltips on any connected device. Progress bar updates smoothly every 100ms while playing, syncing with Spotify every 15 seconds
 - 🔇 **Smart Volume Availability**: Volume slider/buttons are automatically disabled when the current Spotify device does not support volume control
-- 🧾 **Queue Management**: Add tracks to queue from Search/Library and view current queue in Player tab
+- 🧾 **Queue Management**: Add tracks to queue from Search/Library and view current queue in Player tab, including podcast episode artwork in mixed-media queues
 - 🔁 **Bulk Queue Expansion**: Queue requests can accept `id` + `type` (track/album/playlist) and expand to track URIs on the backend
 - 📱 **Device Management**: View and switch between available Spotify devices
 - 🔐 **OAuth Integration**: Secure authentication with Spotify
 - 💾 **Database Storage**: Persistent user data and token management
 - 🔄 **Auto-Refresh**: Recently played tracks refresh automatically every minute
 - 🔎 **Album Detail View**: Open album track list in a modal with paging and quick playback actions
+- 🎙️ **Podcast Support**: Save/remove podcasts, browse saved shows, and inspect episode lists from the library or search flows
 - ♿ **WCAG Level A Accessible**: Full keyboard navigation, ARIA labels, screen reader support, semantic HTML structure
 - ✅ **Explicit Mutation Feedback**: Liked-track add/remove actions return structured success/failure payloads and show clear in-app confirmation messages
 
@@ -139,7 +163,7 @@ spring.datasource.password=your_db_password
 spotify.client.id=your_spotify_client_id
 spotify.client.secret=your_spotify_client_secret
 spotify.redirect.uri=http://127.0.0.1:3000
-spotify.scope=user-read-private user-read-email playlist-read-private playlist-read-collaborative user-read-playback-state user-modify-playback-state user-library-read user-read-recently-played streaming
+spotify.scope=user-read-private user-read-email playlist-read-private playlist-read-collaborative user-read-playback-state user-modify-playback-state user-library-read user-library-modify user-read-recently-played streaming
 ```
 
 4. Build and run:
@@ -198,16 +222,18 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
    - Keyboard (when progress bar is focused): Left/Right for ±5 second increments
    - Volume: Adjust with +/- buttons or slider (shows volume % on hover)
    - If the active device does not support volume control, volume controls are disabled automatically
-3. **Search**: Use the search tab to find songs, artists, albums, and playlists. Select **All** to search songs, albums, and playlists together in grouped results.
+3. **Search**: Use the search tab to find songs, artists, albums, playlists, and podcasts. Select **All** to search songs, albums, playlists, and podcasts together in grouped results.
    - Artist names are clickable and open the Spotify artist page
    - Use **Add to Queue** on tracks to queue without interrupting playback
    - Album **Add to Queue** now queues album tracks via backend expansion
    - Albums include a **Tracks** button to open a detail modal (album items only)
-4. **Library**: Browse recently played tracks, liked songs, and your playlists (Recently Played is the default sub-tab)
+   - Podcast cards support save and episode-list actions
+4. **Library**: Browse recently played tracks, liked songs, your playlists, and saved podcasts (Recently Played is the default sub-tab)
    - Liked Songs and Recently Played support **Add to Queue**
+   - My Podcasts supports save/remove and episode browsing in a modal
 5. **Devices**: View and select available Spotify devices
 6. **Current Queue**: In Player tab, use **Current Queue** panel to view queued tracks and refresh queue state
-   - Queue items show album-art thumbnails
+   - Queue items show track album art or podcast episode/show artwork
    - Queue rows are rendered using Handlebars templates for consistent UI structure
    - Queue is polled every 30 seconds (independent of the 15-second playback poll)
 
@@ -217,6 +243,7 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 - **Playback commands**: Invalid requests surface clear error messages instead of generic server errors
 - **Spotify API errors propagated**: Backend uses `SpotifyApiException` + `GlobalExceptionHandler` to forward Spotify's original status code and message to the client instead of returning a generic 500
 - **Liked-track mutation contract**: `PUT/DELETE /api/spotify/me/tracks` return structured payloads with `result/status/message/ids`, and frontend surfaces `message` directly
+- **Podcast mutation contract**: `PUT/DELETE /api/spotify/me/shows` return structured payloads with `result/status/message/ids`, and frontend surfaces `message` directly
 - **In-app error notifications**: All error feedback in `library.js` (play playlist, play track, add to queue) uses `Utils.showError()` instead of browser `alert()` dialogs, keeping users in context
 - **High-contrast global alerts**: Error and success banners use solid opaque backgrounds (`rgba(133,20,32,0.96)` / `rgba(19,96,53,0.96)`) with white text and a white close button so they remain clearly visible against the dark app background
 
@@ -237,9 +264,13 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 - `GET /auth/user/{userId}` - Get user information
 
 ### Spotify Integration
-- `GET /api/spotify/search` - Search for tracks, artists, albums, and playlists (`limit` supported)
+- `GET /api/spotify/search` - Search for tracks, artists, albums, playlists, and shows (`limit` supported)
+- `GET /api/spotify/podcasts/search` - Search podcast shows
+- `GET /api/spotify/podcasts/{showId}` - Get podcast details
+- `GET /api/spotify/podcasts/{showId}/episodes` - Get paginated episodes for a show
 - `GET /api/spotify/devices` - Get available devices
 - `GET /api/spotify/playback` - Get current playback state
+- `GET /api/spotify/current-track` - Get current track or podcast episode playback data
 - `GET /api/spotify/queue` - Get current playback queue
 - `GET /api/spotify/albums/tracks` - Get tracks for an album (`albumId`, `limit`, `offset`)
 - `POST /api/spotify/play` - Start playback
@@ -255,6 +286,9 @@ The script detects processes by port (9090 / 3000) and Spring Boot / Python serv
 - `GET /api/spotify/me/tracks` - Get user's liked songs
 - `PUT /api/spotify/me/tracks` - Save one or more tracks to Liked Songs (`ids` query param, comma-separated)
 - `DELETE /api/spotify/me/tracks` - Remove one or more tracks from Liked Songs (`ids` query param, comma-separated)
+- `GET /api/spotify/me/shows` - Get user's saved podcasts
+- `PUT /api/spotify/me/shows` - Save one or more podcasts to My Podcasts (`ids` query param, comma-separated)
+- `DELETE /api/spotify/me/shows` - Remove one or more podcasts from My Podcasts (`ids` query param, comma-separated)
 - `GET /api/spotify/me/recently-played` - Get recently played tracks
 
 ## Database Schema

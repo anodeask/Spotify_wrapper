@@ -269,6 +269,78 @@ const SpotifyAPI = {
 
         return response;
     },
+
+    async searchPodcasts(query, limit = CONFIG.SEARCH.DEFAULT_LIMIT) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            query: query,
+            limit: limit.toString()
+        });
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.PODCAST_SEARCH}?${params}`);
+    },
+
+    async getSavedShows(limit = 20, offset = 0) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            limit: limit.toString(),
+            offset: offset.toString()
+        });
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.SAVED_SHOWS}?${params}`);
+    },
+
+    async getPodcastDetails(showId) {
+        const params = new URLSearchParams({
+            userId: this.userId
+        });
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.PODCAST_DETAILS}/${encodeURIComponent(showId)}?${params}`);
+    },
+
+    async getPodcastEpisodes(showId, limit = 20, offset = 0) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            limit: limit.toString(),
+            offset: offset.toString()
+        });
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.PODCAST_DETAILS}/${encodeURIComponent(showId)}/episodes?${params}`);
+    },
+
+    async saveShows(showIds) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            ids: this.normalizeShowIds(showIds)
+        });
+
+        const response = await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.SAVED_SHOWS}?${params}`, {
+            method: 'PUT'
+        });
+
+        if (response?.result && response.result !== 'success') {
+            throw new Error(response.message || 'Failed to save podcast.');
+        }
+
+        return response;
+    },
+
+    async removeShows(showIds) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            ids: this.normalizeShowIds(showIds)
+        });
+
+        const response = await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.SAVED_SHOWS}?${params}`, {
+            method: 'DELETE'
+        });
+
+        if (response?.result && response.result !== 'success') {
+            throw new Error(response.message || 'Failed to remove podcast.');
+        }
+
+        return response;
+    },
     
     // Get recently played tracks
     async getRecentlyPlayed(limit = 50, before = null) {
@@ -339,6 +411,14 @@ const SpotifyAPI = {
         }
 
         return String(trackIds || '').trim();
+    },
+
+    normalizeShowIds(showIds) {
+        if (Array.isArray(showIds)) {
+            return showIds.filter(Boolean).join(',');
+        }
+
+        return String(showIds || '').trim();
     },
 
 };

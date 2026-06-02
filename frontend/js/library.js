@@ -3,9 +3,20 @@ const Library = {
     templates: {},
     currentPlaylistsPage: 0,
     currentLikedSongsPage: 0,
+    currentPodcastsPage: 0,
+    podcastsLimit: 20,
     playlistsLimit: 20,
     likedSongsLimit: 20,
     recentlyPlayedLimit: 20,
+    podcastModal: null,
+    podcastModalState: {
+        showId: null,
+        showName: '',
+        imageUrl: '',
+        offset: 0,
+        total: 0,
+        limit: 20
+    },
     playlistsNextOffset: null,
     playlistsLoading: false,
     recentlyPlayedCursor: null, // cursor for loading more recently played
@@ -16,7 +27,8 @@ const Library = {
     isLoaded: {
         playlists: false,
         likedSongs: false,
-        recentlyPlayed: false
+        recentlyPlayed: false,
+        podcasts: false
     },
 
     init() {
@@ -29,6 +41,7 @@ const Library = {
         const playlistTemplate = document.getElementById('library-playlist-template');
         const likedSongTemplate = document.getElementById('liked-song-template');
         const recentlyPlayedTemplate = document.getElementById('recently-played-template');
+        const podcastTemplate = document.getElementById('podcast-template');
 
         if (playlistTemplate) {
             this.templates.playlist = Handlebars.compile(playlistTemplate.innerHTML);
@@ -38,6 +51,9 @@ const Library = {
         }
         if (recentlyPlayedTemplate) {
             this.templates.recentlyPlayed = Handlebars.compile(recentlyPlayedTemplate.innerHTML);
+        }
+        if (podcastTemplate) {
+            this.templates.podcast = Handlebars.compile(podcastTemplate.innerHTML);
         }
 
         // Register helpers if not already registered
@@ -58,6 +74,12 @@ const Library = {
             }
         });
 
+        $('#podcasts-tab-btn').on('shown.bs.tab', () => {
+            if (!this.isLoaded.podcasts) {
+                this.loadSavedPodcasts();
+            }
+        });
+
         $('#liked-songs-tab-btn').on('shown.bs.tab', () => {
             if (!this.isLoaded.likedSongs) {
                 this.loadLikedSongs();
@@ -73,7 +95,7 @@ const Library = {
         });
 
         // Stop auto-refresh and scroll when switching away from recently played tab
-        $('#playlists-tab-btn, #liked-songs-tab-btn').on('shown.bs.tab', () => {
+        $('#playlists-tab-btn, #liked-songs-tab-btn, #podcasts-tab-btn').on('shown.bs.tab', () => {
             this.stopRecentlyPlayedAutoRefresh();
             this.unbindRecentlyPlayedScroll();
         });
@@ -106,6 +128,17 @@ const Library = {
         $(document).on('click', '#recently-played-list .save-liked-btn', this.handleSaveLikedSong.bind(this));
         $(document).on('click', '#liked-songs-list .add-queue-btn', this.handleAddToQueue.bind(this));
         $(document).on('click', '#recently-played-list .add-queue-btn', this.handleAddToQueue.bind(this));
+        $(document).on('click', '.save-show-btn', this.handleSaveShow.bind(this));
+        $(document).on('click', '.remove-show-btn', this.handleRemoveShow.bind(this));
+        $(document).on('click', '.view-show-episodes-btn', this.handleViewShowEpisodes.bind(this));
+
+        $('#podcast-prev-btn').on('click', () => this.loadPodcastEpisodesPage(this.podcastModalState.offset - this.podcastModalState.limit));
+        $('#podcast-next-btn').on('click', () => this.loadPodcastEpisodesPage(this.podcastModalState.offset + this.podcastModalState.limit));
+
+        const podcastModalElement = document.getElementById('podcast-episodes-modal');
+        if (podcastModalElement) {
+            this.podcastModal = new bootstrap.Modal(podcastModalElement);
+        }
     },
 
     // Start auto-refresh for recently played (every 5 minutes)
@@ -172,6 +205,10 @@ const Library = {
         } else if ($('#playlists-tab-btn').hasClass('active')) {
             if (!this.isLoaded.playlists) {
                 this.loadMyPlaylists();
+            }
+        } else if ($('#podcasts-tab-btn').hasClass('active')) {
+            if (!this.isLoaded.podcasts) {
+                this.loadSavedPodcasts();
             }
         }
     },
@@ -304,6 +341,234 @@ const Library = {
         } catch (error) {
             return null;
         }
+    },
+
+    async loadSavedPodcasts(offset = 0) {
+        if (!SpotifyAPI.userId) return;
+
+        const $container = $('#podcasts-list');
+        const $pagination = $('#podcasts-pagination');
+
+        $container.html(`
+            <div class="col-12 text-center text-muted">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading your podcasts...</p>
+            </div>
+        `);
+
+        try {
+            const response = await SpotifyAPI.getSavedShows(this.podcastsLimit, offset);
+
+            this.currentPodcastsPage = Math.floor(offset / this.podcastsLimit);
+            this.displaySavedPodcasts(response, $container, $pagination);
+            this.isLoaded.podcasts = true;
+        } catch (error) {
+            console.error('Error loading podcasts:', error);
+            $container.html(`
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Failed to load podcasts. Please try again.
+                    </div>
+                </div>
+            `);
+        }
+    },
+
+    displaySavedPodcasts(data, $container, $pagination) {
+        $container.empty();
+        $pagination.empty();
+
+        if (!data.items || data.items.length === 0) {
+            $container.html(`
+                <div class="col-12 text-center text-muted">
+                    <i class="fas fa-microphone display-4 mb-3"></i>
+                    <p>No podcasts saved yet.</p>
+                </div>
+            `);
+            return;
+        }
+
+        data.items.forEach(show => {
+            const imageUrl = show.images && show.images.length > 0
+                ? show.images[0].url
+                : 'https://via.placeholder.com/64?text=Podcast';
+
+            const cardHtml = `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card search-result-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <img src="${imageUrl}" alt="${show.name || 'Podcast'}" class="search-result-image rounded me-3">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title mb-1">${Handlebars.escapeExpression(show.name || 'Untitled Podcast')}</h6>
+                                    <p class="text-muted mb-1 small">${Handlebars.escapeExpression(show.publisher || 'Unknown publisher')}</p>
+                                    <p class="text-muted mb-2 small">${show.totalEpisodes || 0} episodes</p>
+                                    <div class="track-actions mt-2">
+                                        <button class="btn btn-outline-danger btn-sm remove-show-btn"
+                                            data-id="${show.id || ''}"
+                                            data-name="${Handlebars.escapeExpression(show.name || 'Podcast')}"
+                                            title="Remove from My Podcasts"
+                                            aria-label="Remove from My Podcasts">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm view-show-episodes-btn"
+                                            data-id="${show.id || ''}"
+                                            data-name="${Handlebars.escapeExpression(show.name || 'Podcast')}"
+                                            data-image="${imageUrl}"
+                                            title="View Episodes"
+                                            aria-label="View Episodes">
+                                            <i class="fas fa-list"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $container.append(cardHtml);
+        });
+
+        this.renderPagination($pagination, data.total || 0, data.offset || 0, this.podcastsLimit, 'podcasts');
+    },
+
+    async handleSaveShow(event) {
+        const $button = $(event.currentTarget);
+        const showId = $button.data('id');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
+
+        if (!showId) return;
+
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.saveShows(showId);
+            Utils.showSuccess(response?.message || `Saved to My Podcasts: ${name}`);
+            if ($('#podcasts-content').hasClass('active')) {
+                await this.loadSavedPodcasts(this.currentPodcastsPage * this.podcastsLimit);
+            } else {
+                this.isLoaded.podcasts = false;
+            }
+        } catch (error) {
+            console.error('Error saving podcast:', error);
+            Utils.showError(error.message || 'Failed to save podcast.');
+        } finally {
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    async handleRemoveShow(event) {
+        const $button = $(event.currentTarget);
+        const showId = $button.data('id');
+        const name = $button.data('name');
+        const originalHtml = $button.html();
+
+        if (!showId) return;
+
+        $button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        try {
+            const response = await SpotifyAPI.removeShows(showId);
+            Utils.showSuccess(response?.message || `Removed from My Podcasts: ${name}`);
+            await this.loadSavedPodcasts(this.currentPodcastsPage * this.podcastsLimit);
+        } catch (error) {
+            console.error('Error removing podcast:', error);
+            Utils.showError(error.message || 'Failed to remove podcast.');
+        } finally {
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    },
+
+    async handleViewShowEpisodes(event) {
+        const $button = $(event.currentTarget);
+        const showId = $button.data('id');
+        const showName = $button.data('name') || 'Podcast';
+        const imageUrl = $button.data('image') || '';
+
+        if (!showId || !this.podcastModal) return;
+
+        this.podcastModalState = {
+            showId,
+            showName,
+            imageUrl,
+            offset: 0,
+            total: 0,
+            limit: 20
+        };
+
+        $('#podcast-episodes-modal-label').text(showName);
+        $('#podcast-modal-subtitle').text('Loading episodes...');
+        $('#podcast-modal-cover').attr('src', imageUrl || 'https://via.placeholder.com/64?text=Podcast');
+        $('#podcast-episodes-list').html('<div class="list-group-item text-muted text-center">Loading episodes...</div>');
+        this.podcastModal.show();
+
+        await this.loadPodcastEpisodesPage(0);
+    },
+
+    async loadPodcastEpisodesPage(offset) {
+        const state = this.podcastModalState;
+        if (!state.showId) return;
+
+        const safeOffset = Math.max(0, offset);
+        state.offset = safeOffset;
+
+        try {
+            const response = await SpotifyAPI.getPodcastEpisodes(state.showId, state.limit, safeOffset);
+            state.total = response.total || 0;
+            state.offset = response.offset || safeOffset;
+
+            this.renderPodcastEpisodes(response.items || []);
+            this.updatePodcastModalPagination();
+            $('#podcast-modal-subtitle').text(`${state.total} episodes`);
+        } catch (error) {
+            console.error('Error loading podcast episodes:', error);
+            $('#podcast-episodes-list').html('<div class="list-group-item text-danger text-center">Failed to load episodes.</div>');
+            $('#podcast-page-info').text('');
+            $('#podcast-prev-btn, #podcast-next-btn').prop('disabled', true);
+        }
+    },
+
+    renderPodcastEpisodes(items) {
+        const $list = $('#podcast-episodes-list');
+        $list.empty();
+
+        if (!items.length) {
+            $list.html('<div class="list-group-item text-muted text-center">No episodes found.</div>');
+            return;
+        }
+
+        items.forEach((episode, index) => {
+            const imageUrl = episode.images && episode.images.length > 0
+                ? episode.images[0].url
+                : this.podcastModalState.imageUrl || 'https://via.placeholder.com/48?text=Ep';
+            const duration = this.formatDuration(episode.durationMs || episode.duration_ms || 0);
+
+            $list.append(`
+                <div class="list-group-item d-flex align-items-start gap-3">
+                    <span class="text-muted small" style="min-width:24px; text-align:right;">${this.podcastModalState.offset + index + 1}</span>
+                    <img src="${imageUrl}" alt="${Handlebars.escapeExpression(episode.name || 'Episode')}" width="48" height="48" class="rounded" style="object-fit:cover;">
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-semibold text-truncate">${Handlebars.escapeExpression(episode.name || 'Untitled Episode')}</div>
+                        <div class="small text-muted">${duration}${episode.releaseDate ? ' • ' + Handlebars.escapeExpression(episode.releaseDate) : ''}</div>
+                    </div>
+                </div>
+            `);
+        });
+    },
+
+    updatePodcastModalPagination() {
+        const state = this.podcastModalState;
+        const from = state.total === 0 ? 0 : state.offset + 1;
+        const to = Math.min(state.offset + state.limit, state.total);
+
+        $('#podcast-page-info').text(state.total === 0 ? 'No episodes' : `Showing ${from}-${to} of ${state.total}`);
+        $('#podcast-prev-btn').prop('disabled', state.offset <= 0);
+        $('#podcast-next-btn').prop('disabled', state.offset + state.limit >= state.total);
     },
 
     // Load liked songs
@@ -553,6 +818,8 @@ const Library = {
                 this.loadMyPlaylists(offset);
             } else if (pageType === 'likedSongs') {
                 this.loadLikedSongs(offset);
+            } else if (pageType === 'podcasts') {
+                this.loadSavedPodcasts(offset);
             }
         });
     },
@@ -715,10 +982,12 @@ const Library = {
         this.isLoaded = {
             playlists: false,
             likedSongs: false,
-            recentlyPlayed: false
+            recentlyPlayed: false,
+            podcasts: false
         };
         this.currentPlaylistsPage = 0;
         this.currentLikedSongsPage = 0;
+        this.currentPodcastsPage = 0;
         this.playlistsNextOffset = null;
         this.playlistsLoading = false;
         this.recentlyPlayedCursor = null;
