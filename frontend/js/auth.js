@@ -162,6 +162,9 @@ const Auth = {
             $('#user-name').text(this.currentUser.displayName || 'User');
         }
         
+        // Initialize alert templates
+        Utils.initAlertTemplates();
+        
         // Initialize other modules
         if (window.SpotifyAPI) {
             window.SpotifyAPI.init(this.currentUser.userId);

@@ -73,6 +73,21 @@ const CONFIG = {
 
 // Utility functions
 const Utils = {
+    // Template cache for alerts
+    alertTemplates: {},
+
+    initAlertTemplates: () => {
+        Utils.alertTemplates.errorAlert = Handlebars.compile($('#error-alert-template').html());
+        Utils.alertTemplates.errorAlertGlobal = Handlebars.compile($('#error-alert-global-template').html());
+        Utils.alertTemplates.successAlert = Handlebars.compile($('#success-alert-template').html());
+        Utils.alertTemplates.successAlertGlobal = Handlebars.compile($('#success-alert-global-template').html());
+        Utils.alertTemplates.fullLoading = Handlebars.compile($('#full-loading-template').html());
+        Utils.alertTemplates.loadMoreButton = Handlebars.compile($('#load-more-button-template').html());
+        Utils.alertTemplates.loadMoreLoading = Handlebars.compile($('#load-more-loading-template').html());
+        Utils.alertTemplates.loadComplete = Handlebars.compile($('#load-complete-template').html());
+        Utils.alertTemplates.simpleError = Handlebars.compile($('#simple-error-template').html());
+    },
+
     escapeHtml: (value) => {
         if (value == null) return '';
         return String(value)
@@ -176,26 +191,14 @@ const Utils = {
                 $('body').append($globalError);
             }
 
-            $globalError.html(`
-                <div class="alert alert-danger alert-dismissible fade show shadow global-floating-alert" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `);
+            $globalError.html(Utils.alertTemplates.errorAlertGlobal({ message }));
             setTimeout(() => {
                 $globalError.find('.alert').alert('close');
             }, 5000);
             return;
         }
 
-        $container.html(`
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `);
+        $container.html(Utils.alertTemplates.errorAlert({ message }));
         $container.removeClass('d-none');
     },
     
@@ -216,26 +219,14 @@ const Utils = {
                 $('body').append($globalSuccess);
             }
 
-            $globalSuccess.html(`
-                <div class="alert alert-success alert-dismissible fade show shadow global-floating-alert" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `);
+            $globalSuccess.html(Utils.alertTemplates.successAlertGlobal({ message }));
             setTimeout(() => {
                 $globalSuccess.find('.alert').alert('close');
             }, 3000);
             return;
         }
 
-        $container.html(`
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `);
+        $container.html(Utils.alertTemplates.successAlert({ message }));
         $container.removeClass('d-none');
     },
     
@@ -243,6 +234,61 @@ const Utils = {
     truncateText: (text, maxLength = 50) => {
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
+    },
+
+    // Show loading message
+    showLoadingMessage: (container, message = 'Loading...') => {
+        const template = Handlebars.compile($('#loading-message-template').html());
+        $(container).html(template({ message }));
+    },
+
+    // Show error message (inline)
+    showErrorMessage: (container, message = 'An error occurred.') => {
+        const template = Handlebars.compile($('#error-message-template').html());
+        $(container).html(template({ message }));
+    },
+
+    // Show empty state message
+    showEmptyMessage: (container, message = 'No items found.') => {
+        const template = Handlebars.compile($('#empty-state-template').html());
+        $(container).html(template({ message }));
+    },
+
+    // Show pagination info
+    showPaginationInfo: (container, start, end, total) => {
+        const template = Handlebars.compile($('#pagination-info-template').html());
+        $(container).html(template({ start, end, total }));
+    },
+
+    // Get spinner HTML
+    getSpinnerHtml: () => {
+        const template = Handlebars.compile($('#spinner-button-template').html());
+        return template({});
+    },
+
+    // Show full page loading state
+    showFullLoading: (container, message = 'Loading...') => {
+        $(container).html(Utils.alertTemplates.fullLoading({ message }));
+    },
+
+    // Show load-more button
+    showLoadMoreButton: (afterElement, buttonId = 'load-more-btn', wrapperId = 'load-more-wrapper', label = 'Load More') => {
+        $(afterElement).after(Utils.alertTemplates.loadMoreButton({ buttonId, wrapperId, label }));
+    },
+
+    // Show load-more loading indicator
+    showLoadMoreLoading: (afterElement, wrapperId = 'load-more-loading-wrapper', message = 'Loading more...') => {
+        $(afterElement).after(Utils.alertTemplates.loadMoreLoading({ wrapperId, message }));
+    },
+
+    // Show load complete message
+    showLoadComplete: (afterElement, wrapperId = 'load-complete-wrapper', message = 'All loaded') => {
+        $(afterElement).after(Utils.alertTemplates.loadComplete({ wrapperId, message }));
+    },
+
+    // Show simple error
+    showSimpleError: (container, message = 'An error occurred.') => {
+        $(container).html(Utils.alertTemplates.simpleError({ message }));
     },
     
     // Get image URL with fallback

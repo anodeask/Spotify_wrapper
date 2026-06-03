@@ -262,24 +262,12 @@ const Library = {
 
         if (!isLoadMore) {
             // Fresh load — show spinner and reset load-more state.
-            $container.html(`
-                <div class="col-12 text-center text-muted">
-                    <div class="spinner-border text-success" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading your playlists...</p>
-                </div>
-            `);
+            Utils.showFullLoading($container, 'Loading your playlists...');
             $pagination.empty();
             this.playlistsNextOffset = null;
             $('#load-more-playlists-wrapper').remove();
         } else {
-            $container.after(`
-                <div id="load-more-playlists-wrapper" class="d-flex justify-content-center mt-3 mb-3">
-                    <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
-                    <span class="text-muted">Loading more...</span>
-                </div>
-            `);
+            Utils.showLoadMoreLoading($container, 'load-more-playlists-wrapper', 'Loading more...');
         }
 
         try {
@@ -292,14 +280,7 @@ const Library = {
             console.error('Error loading playlists:', error);
             $('#load-more-playlists-wrapper').remove();
             if (!isLoadMore) {
-                $container.html(`
-                    <div class="col-12">
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Failed to load playlists. Please try again.
-                        </div>
-                    </div>
-                `);
+                Utils.showSimpleError($container, 'Failed to load playlists. Please try again.');
             }
         } finally {
             this.playlistsLoading = false;
@@ -346,19 +327,9 @@ const Library = {
         this.playlistsNextOffset = Number.isFinite(nextOffset) ? nextOffset : null;
 
         if (this.playlistsNextOffset !== null) {
-            $container.after(`
-                <div id="load-more-playlists-wrapper" class="text-center mt-3 mb-3">
-                    <button id="load-more-playlists" class="btn btn-outline-success">
-                        <i class="fas fa-plus me-2"></i>Load More
-                    </button>
-                </div>
-            `);
+            Utils.showLoadMoreButton($container, 'load-more-playlists', 'load-more-playlists-wrapper', 'Load More');
         } else {
-            $container.after(`
-                <div id="load-more-playlists-wrapper" class="text-center text-muted mt-3 mb-3">
-                    <small><i class="fas fa-check-circle me-1"></i>All playlists loaded</small>
-                </div>
-            `);
+            Utils.showLoadComplete($container, 'load-more-playlists-wrapper', 'All playlists loaded');
         }
     },
 
@@ -380,14 +351,7 @@ const Library = {
         const $container = $('#podcasts-list');
         const $pagination = $('#podcasts-pagination');
 
-        $container.html(`
-            <div class="col-12 text-center text-muted">
-                <div class="spinner-border text-success" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading your podcasts...</p>
-            </div>
-        `);
+        Utils.showFullLoading($container, 'Loading your podcasts...');
 
         try {
             const response = await SpotifyAPI.getSavedShows(this.podcastsLimit, offset);
@@ -397,14 +361,7 @@ const Library = {
             this.isLoaded.podcasts = true;
         } catch (error) {
             console.error('Error loading podcasts:', error);
-            $container.html(`
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Failed to load podcasts. Please try again.
-                    </div>
-                </div>
-            `);
+            Utils.showSimpleError($container, 'Failed to load podcasts. Please try again.');
         }
     },
 
@@ -449,14 +406,7 @@ const Library = {
         const $container = $('#saved-episodes-list');
         const $pagination = $('#saved-episodes-pagination');
 
-        $container.html(`
-            <div class="col-12 text-center text-muted">
-                <div class="spinner-border text-success" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading your saved episodes...</p>
-            </div>
-        `);
+        Utils.showFullLoading($container, 'Loading your saved episodes...');
 
         try {
             const response = await SpotifyAPI.getSavedEpisodes(this.savedEpisodesLimit, offset);
@@ -472,14 +422,7 @@ const Library = {
             this.isLoaded.savedEpisodes = true;
         } catch (error) {
             console.error('Error loading saved episodes:', error);
-            $container.html(`
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Failed to load saved episodes. Please try again.
-                    </div>
-                </div>
-            `);
+            Utils.showSimpleError($container, 'Failed to load saved episodes. Please try again.');
         }
     },
 
@@ -525,12 +468,7 @@ const Library = {
         $pagination.empty();
 
         if (!data.items || data.items.length === 0) {
-            $container.html(`
-                <div class="col-12 text-center text-muted">
-                    <i class="fas fa-podcast display-4 mb-3"></i>
-                    <p>No saved episodes yet.</p>
-                </div>
-            `);
+            Utils.showEmptyMessage($container, 'No saved episodes yet.');
             return;
         }
 
@@ -630,7 +568,7 @@ const Library = {
         $('#podcast-episodes-modal-label').text(showName);
         $('#podcast-modal-subtitle').text('Loading episodes...');
         $('#podcast-modal-cover').attr('src', imageUrl || 'https://via.placeholder.com/64?text=Podcast');
-        $('#podcast-episodes-list').html('<div class="list-group-item text-muted text-center">Loading episodes...</div>');
+        Utils.showLoadingMessage('#podcast-episodes-list', 'Loading episodes...');
         this.podcastModal.show();
 
         await this.loadPodcastEpisodesPage(0);
@@ -654,7 +592,7 @@ const Library = {
             $('#podcast-modal-subtitle').text(`${state.total} episodes`);
         } catch (error) {
             console.error('Error loading podcast episodes:', error);
-            $('#podcast-episodes-list').html('<div class="list-group-item text-danger text-center">Failed to load episodes.</div>');
+            Utils.showErrorMessage('#podcast-episodes-list', 'Failed to load episodes.');
             $('#podcast-page-info').text('');
             $('#podcast-prev-btn, #podcast-next-btn').prop('disabled', true);
         }
@@ -665,7 +603,7 @@ const Library = {
         $list.empty();
 
         if (!items.length) {
-            $list.html('<div class="list-group-item text-muted text-center">No episodes found.</div>');
+            Utils.showEmptyMessage($list, 'No episodes found.');
             return;
         }
 
@@ -711,14 +649,7 @@ const Library = {
         const $container = $('#liked-songs-list');
         const $pagination = $('#liked-songs-pagination');
 
-        $container.html(`
-            <div class="col-12 text-center text-muted">
-                <div class="spinner-border text-success" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading your liked songs...</p>
-            </div>
-        `);
+        Utils.showFullLoading($container, 'Loading your liked songs...');
 
         try {
             const response = await SpotifyAPI.getLikedSongs(this.likedSongsLimit, offset);
@@ -729,14 +660,7 @@ const Library = {
 
         } catch (error) {
             console.error('Error loading liked songs:', error);
-            $container.html(`
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Failed to load liked songs. Please try again.
-                    </div>
-                </div>
-            `);
+            Utils.showSimpleError($container, 'Failed to load liked songs. Please try again.');
         }
     },
 
@@ -745,12 +669,7 @@ const Library = {
         $pagination.empty();
 
         if (!data.items || data.items.length === 0) {
-            $container.html(`
-                <div class="col-12 text-center text-muted">
-                    <i class="fas fa-heart display-4 mb-3"></i>
-                    <p>No liked songs yet. Start liking songs in Spotify!</p>
-                </div>
-            `);
+            Utils.showEmptyMessage($container, 'No liked songs yet. Start liking songs in Spotify!');
             return;
         }
 
@@ -793,24 +712,12 @@ const Library = {
 
         if (!isLoadMore) {
             // Fresh load — show spinner
-            $container.html(`
-                <div class="col-12 text-center text-muted">
-                    <div class="spinner-border text-success" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading recently played...</p>
-                </div>
-            `);
+            Utils.showFullLoading($container, 'Loading recently played...');
             this.recentlyPlayedCursor = null;
             $('#load-more-recently-played-wrapper').remove();
         } else {
             // Show a small loading indicator at the bottom
-            $container.after(`
-                <div id="load-more-recently-played-wrapper" class="d-flex justify-content-center mt-3 mb-3">
-                    <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
-                    <span class="text-muted">Loading more...</span>
-                </div>
-            `);
+            Utils.showLoadMoreLoading($container, 'load-more-recently-played-wrapper', 'Loading more...');
         }
 
         try {
@@ -823,14 +730,7 @@ const Library = {
             console.error('Error loading recently played:', error);
             $('#load-more-recently-played-wrapper').remove();
             if (!isLoadMore) {
-                $container.html(`
-                    <div class="col-12">
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Failed to load recently played. Please try again.
-                        </div>
-                    </div>
-                `);
+                Utils.showSimpleError($container, 'Failed to load recently played. Please try again.');
             }
         } finally {
             this.recentlyPlayedLoading = false;
@@ -847,12 +747,7 @@ const Library = {
 
         if (!data.items || data.items.length === 0) {
             if (!isAppend) {
-                $container.html(`
-                    <div class="col-12 text-center text-muted">
-                        <i class="fas fa-history display-4 mb-3"></i>
-                        <p>No recently played tracks. Start listening to music!</p>
-                    </div>
-                `);
+                Utils.showEmptyMessage($container, 'No recently played tracks. Start listening to music!');
             }
             this.recentlyPlayedCursor = null;
             return;
@@ -893,11 +788,7 @@ const Library = {
             // No more data — unbind scroll and show end message
             this.recentlyPlayedCursor = null;
             this.unbindRecentlyPlayedScroll();
-            $container.after(`
-                <div id="load-more-recently-played-wrapper" class="text-center text-muted mt-3 mb-3">
-                    <small><i class="fas fa-check-circle me-1"></i>All caught up!</small>
-                </div>
-            `);
+            Utils.showLoadComplete($container, 'load-more-recently-played-wrapper', 'All caught up!');
         }
     },
 
@@ -932,10 +823,13 @@ const Library = {
         </li>`;
 
         html += '</ul></nav>';
-        html += `<p class="text-muted text-center small mb-0">Showing ${currentOffset + 1}-${Math.min(currentOffset + limit, total)} of ${total}</p>`;
         html += '</div>';
 
         $container.html(html);
+        
+        const start = currentOffset + 1;
+        const end = Math.min(currentOffset + limit, total);
+        Utils.showPaginationInfo($container.find('.pagination').after('<div class="pagination-info"></div>').next(), start, end, total);
 
         // Bind pagination clicks
         $container.find('.page-link').on('click', (e) => {

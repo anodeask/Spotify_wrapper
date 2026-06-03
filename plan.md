@@ -2,6 +2,12 @@
 
 ## Implementation Update (May 2026)
 
+### Frontend Rendering Mandate (June 3, 2026)
+- Mandate adopted: avoid constructing HTML strings in JavaScript modules under `frontend/js`.
+- New UI rendering must use Handlebars templates defined in `frontend/index.html` and rendered through shared helpers in `Utils`.
+- Existing inline state markup (loading, error, empty, pagination, load-more) should be migrated to reusable templates when touched.
+- Goal: consistent UI structure, centralized styling updates, and lower maintenance overhead.
+
 ### Frontend Duration Formatting Centralization (June 3, 2026)
 - Consolidated duplicate duration formatting logic from five modules into a single shared utility in `Utils`.
 - Created one canonical formatter `Utils.formatDurationFromSeconds()` that implements the standard rule: `m:ss` by default, `h:mm:ss` when duration exceeds 60 minutes.

@@ -1,6 +1,6 @@
 # Spotify Wrapper - Project Context
 
-> **Last Updated:** June 2, 2026
+> **Last Updated:** June 3, 2026
 
 This document provides a comprehensive overview of the Spotify Wrapper project, including architecture, recent changes, and development notes.
 
@@ -189,8 +189,15 @@ spotify/
   - `formatDurationFromSeconds(seconds)` - Canonical duration formatter (m:ss or h:mm:ss when exceeds 60 minutes)
   - `formatTime(ms)` - Format milliseconds using shared duration logic
   - `formatDuration(seconds)` - Format seconds using shared duration logic
+  - Template rendering helpers for consistent loading/error/empty/pagination UI states
   - Other utilities: `debounce()`, `escapeHtml()`, `formatArtistLinks()`, `showError()`, `showSuccess()`, etc.
 - Single source of truth for all duration formatting across the frontend
+
+### Frontend Rendering Convention (Mandate)
+- Do not construct UI HTML directly in JavaScript modules under `frontend/js`.
+- Define reusable Handlebars templates in `frontend/index.html` and render via shared `Utils` helper methods.
+- For state UIs (loading, error, empty, pagination, load-more), use centralized template utilities rather than inline `$.html(...)` strings.
+- When modifying legacy code that still uses inline HTML construction, migrate touched blocks to template-based rendering in the same change.
 
 ### `search.js`
 - Search form handling
@@ -296,6 +303,10 @@ const Config = {
 ## 📝 Recent Changes
 
 ### June 3, 2026
+
+#### Frontend Template-First Rendering Mandate
+- Added a project convention that frontend UI markup should be rendered from Handlebars templates instead of being constructed inline in JavaScript files.
+- Clarified that shared state UIs (loading, error, empty, pagination, and load-more) must use centralized template helpers in `Utils`.
 
 #### Duration Formatting Consolidation
 - Identified five modules with duplicate duration formatting logic: `config.js`, `search.js`, `library.js`, `player.js`, `detail.js`.

@@ -107,12 +107,7 @@ const DetailView = {
             );
         } catch (error) {
             console.error('Failed to load tracks:', error);
-            $list.html(`
-                <div class="text-center text-danger py-4">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Failed to load tracks: ${error.message || 'Unknown error'}
-                </div>
-            `);
+            Utils.showErrorMessage('#detail-track-list', `Failed to load tracks: ${error.message || 'Unknown error'}`);
         } finally {
             this.isLoading = false;
         }
@@ -123,11 +118,7 @@ const DetailView = {
         $list.empty();
 
         if (!tracks || tracks.length === 0) {
-            $list.html(`
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-music me-2"></i>No tracks found
-                </div>
-            `);
+            Utils.showEmptyMessage($list, 'No tracks found');
             return;
         }
 

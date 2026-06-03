@@ -41,16 +41,7 @@ const DevicesModule = {
         const $devicesList = $('#devices-list');
         
         if (this.devices.length === 0) {
-            $devicesList.html(`
-                <div class="col-12 text-center text-muted">
-                    <i class="fas fa-devices display-4 mb-3"></i>
-                    <h5>No devices found</h5>
-                    <p>Make sure Spotify is open on at least one of your devices</p>
-                    <button class="btn btn-outline-success" onclick="DevicesModule.loadDevices()">
-                        <i class="fas fa-sync-alt me-2"></i>Refresh
-                    </button>
-                </div>
-            `);
+            Utils.showEmptyMessage($devicesList, 'No devices found. Make sure Spotify is open on at least one of your devices.');
             return;
         }
         
@@ -221,20 +212,14 @@ const DevicesModule = {
     // Show loading state
     showLoading(show) {
         if (show) {
-            $('#devices-list').html(`
-                <div class="col-12 text-center">
-                    <div class="spinner-border text-success" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading devices...</p>
-                </div>
-            `);
+            Utils.showFullLoading($('#devices-list'), 'Loading devices...');
         }
     },
     
     // Show error message
     showError(message) {
-        $('#devices-list').html(`
+        const $container = $('#devices-list');
+        $container.html(`
             <div class="col-12">
                 <div class="alert alert-danger" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>

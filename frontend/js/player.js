@@ -253,11 +253,7 @@ const PlayerModule = {
             this.lastQueueUpdateAt = Date.now();
         } catch (error) {
             console.error('Failed to get queue:', error);
-            $('#queue-list').html(`
-                <div class="list-group-item text-muted text-center">
-                    Queue unavailable. Start playback on an active device.
-                </div>
-            `);
+            Utils.showLoadingMessage('#queue-list', 'Queue unavailable. Start playback on an active device.');
         } finally {
             this.isQueueUpdating = false;
         }
@@ -268,11 +264,7 @@ const PlayerModule = {
         const queue = queueData?.queue || [];
 
         if (!queue.length) {
-            $queueList.html(`
-                <div class="list-group-item text-muted text-center">
-                    Queue is empty.
-                </div>
-            `);
+            Utils.showEmptyMessage($queueList, 'Queue is empty.');
             return;
         }
 
