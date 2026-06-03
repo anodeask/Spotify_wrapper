@@ -2,6 +2,16 @@
 
 ## Implementation Update (May 2026)
 
+### Frontend Duration Formatting Centralization (June 3, 2026)
+- Consolidated duplicate duration formatting logic from five modules into a single shared utility in `Utils`.
+- Created one canonical formatter `Utils.formatDurationFromSeconds()` that implements the standard rule: `m:ss` by default, `h:mm:ss` when duration exceeds 60 minutes.
+- Refactored module-level formatters to delegate to the shared utility:
+  - `frontend/js/search.js` - Handlebars `formatTime` helper now calls `Utils.formatTime()`
+  - `frontend/js/library.js` - `formatDuration()` now calls `Utils.formatTime()`
+  - `frontend/js/player.js` - `formatTime()` now calls `Utils.formatTime()`
+  - `frontend/js/detail.js` - `formatDuration()` now calls `Utils.formatTime()`
+- Benefit: single source of truth for duration display, consistent behavior across all modules, easier maintenance.
+
 ### Podcast Phase 1 and Playback Compatibility Update (June 2026)
 - Implemented Podcast Phase 1 across backend and frontend:
    - podcast search

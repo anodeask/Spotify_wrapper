@@ -183,6 +183,15 @@ spotify/
 - Token storage (localStorage)
 - User session handling
 
+### `config.js`
+- Configuration constants and API endpoints
+- **Shared utilities in `Utils` object:**
+  - `formatDurationFromSeconds(seconds)` - Canonical duration formatter (m:ss or h:mm:ss when exceeds 60 minutes)
+  - `formatTime(ms)` - Format milliseconds using shared duration logic
+  - `formatDuration(seconds)` - Format seconds using shared duration logic
+  - Other utilities: `debounce()`, `escapeHtml()`, `formatArtistLinks()`, `showError()`, `showSuccess()`, etc.
+- Single source of truth for all duration formatting across the frontend
+
 ### `search.js`
 - Search form handling
 - Results rendering with Handlebars templates
@@ -191,16 +200,19 @@ spotify/
 - Add-to-queue actions for track and album results
 - Uses backend queue contract (`id` + `type`) instead of frontend-only expansion loops
 - Renders podcast cards and podcast actions
+- Duration formatting via Handlebars helper that delegates to `Utils.formatTime()`
 
 ### `library.js`
 - **Recently Played:** Recent tracks with relative timestamps (default sub-tab)
 - **Liked Songs:** Paginated liked songs view
 - **My Playlists:** Paginated playlist view
 - **My Podcasts:** Paginated saved podcast view with save/remove actions and episode modal
+- **Saved Episodes:** Paginated saved episode view with play/save/remove actions and progress tracking
 - Lazy loading (loads content only when tab is activated)
 - Add-to-queue actions for track cards in Liked Songs and Recently Played
 - Restores async podcast button state after completion even when no visible rerender occurs
 - Preloads the full saved-episode index before rendering podcast episode rows so already saved episodes consistently show the remove state in the modal
+- Duration formatting delegated to `Utils.formatTime()` for consistency across the app
 
 ### `devices.js`
 - Device list rendering
@@ -221,6 +233,13 @@ spotify/
 - Queue rows rendered via Handlebars template (`queue-item-template`)
 - Queue rows include artwork for queued tracks and podcast episodes
 - Current-track and queue rendering handle podcast episodes through backend fallback data
+- Duration formatting delegated to `Utils.formatTime()` for consistency across the app
+
+### `detail.js`
+- Album detail view with track listing
+- Pagination controls for album tracks
+- Play, Add to Queue, and Save actions on tracks
+- Duration formatting delegated to `Utils.formatTime()` for consistency across the app
 
 ### `spotify.js`
 - API wrapper for backend calls
@@ -275,6 +294,15 @@ const Config = {
 ---
 
 ## 📝 Recent Changes
+
+### June 3, 2026
+
+#### Duration Formatting Consolidation
+- Identified five modules with duplicate duration formatting logic: `config.js`, `search.js`, `library.js`, `player.js`, `detail.js`.
+- Created shared canonical formatter `Utils.formatDurationFromSeconds()` in `config.js`.
+- Updated `Utils.formatTime()` and `Utils.formatDuration()` to delegate to the shared logic.
+- Refactored all module-level formatters to call the shared utilities instead of reimplementing the rule.
+- Simplified module maintenance: duration display rule now exists in one place; all callers inherit the behavior automatically.
 
 ### June 2, 2026
 
@@ -347,6 +375,7 @@ const Config = {
 - Keep frontend notification logic resilient by supporting both module-local and global alert containers.
 - Treat leaked client credentials as compromised immediately: rotate first, then remove tracked files and clean history if already pushed.
 - Assume Spotify error responses can differ by flow and status; validate fields before casting.
+- Centralize cross-cutting concerns like duration formatting early in development (e.g., in a shared utils module) to avoid duplication across five or more modules and to simplify future maintenance when requirements change.
 
 ### May 25, 2026
 
