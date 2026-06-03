@@ -1218,12 +1218,9 @@ const Library = {
         });
     },
 
-    // Format duration from milliseconds to mm:ss
+    // Delegate to shared Utils duration formatter.
     formatDuration(ms) {
-        if (!ms) return '0:00';
-        const minutes = Math.floor(ms / 60000);
-        const seconds = Math.floor((ms % 60000) / 1000);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        return Utils.formatTime(ms);
     },
 
     // Format played_at timestamp to relative time

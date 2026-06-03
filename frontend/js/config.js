@@ -108,24 +108,32 @@ const Utils = {
         }).join(', ');
     },
 
-    // Format time in ms to mm:ss
-    formatTime: (ms) => {
-        const minutes = Math.floor(ms / 60000);
-        const seconds = ((ms % 60000) / 1000).toFixed(0);
-        return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
-    },
-    
-    // Format duration from seconds to readable format
-    formatDuration: (seconds) => {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const remainingSeconds = seconds % 60;
-        
-        if (hours > 0) {
+    // Shared formatter: m:ss by default, h:mm:ss when duration exceeds 60 minutes.
+    formatDurationFromSeconds: (seconds) => {
+        if (!seconds) return '0:00';
+
+        const totalSeconds = Math.floor(seconds);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const remainingSeconds = totalSeconds % 60;
+
+        if (totalSeconds > 3600) {
             return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-        } else {
-            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
+
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        return `${totalMinutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    },
+
+    // Format time in ms via the shared duration formatter.
+    formatTime: (ms) => {
+        if (!ms) return '0:00';
+        return Utils.formatDurationFromSeconds(ms / 1000);
+    },
+
+    // Format duration from seconds via the shared duration formatter.
+    formatDuration: (seconds) => {
+        return Utils.formatDurationFromSeconds(seconds);
     },
     
     // Debounce function for search

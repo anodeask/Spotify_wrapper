@@ -33,12 +33,9 @@ const SearchModule = {
             return str.substring(0, length) + '...';
         });
         
-        // Format time helper (ms to mm:ss)
+        // Format time helper using shared Utils formatter
         Handlebars.registerHelper('formatTime', function(ms) {
-            if (!ms) return '0:00';
-            const minutes = Math.floor(ms / 60000);
-            const seconds = Math.floor((ms % 60000) / 1000);
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            return Utils.formatTime(ms);
         });
         
         // Format number helper (for followers count)
