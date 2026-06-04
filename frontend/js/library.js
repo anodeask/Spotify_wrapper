@@ -477,6 +477,7 @@ const Library = {
             const progressData = this.getEpisodeProgressData(episode);
             const showName = episode.show?.name || 'Podcast';
             const publisher = episode.show?.publisher || showName;
+            const releaseDate = this.formatReleaseDate(episode.releaseDate || episode.release_date || '');
 
             const templateData = {
                 id: episode.id || '',
@@ -485,6 +486,7 @@ const Library = {
                 showId: episode.show?.id || '',
                 showName,
                 publisher,
+                releaseDate,
                 addedAtLabel: episode.addedAt ? this.formatPlayedAt(episode.addedAt) : '',
                 imageUrl: imageUrl,
                 showProgress: progressData.showProgress,
@@ -611,6 +613,7 @@ const Library = {
             const imageUrl = this.getEpisodeImageUrl(episode, this.podcastModalState.imageUrl || 'https://via.placeholder.com/48?text=Ep');
             const duration = this.formatDuration(episode.durationMs || episode.duration_ms || 0);
             const progressData = this.getEpisodeProgressData(episode);
+            const releaseDate = this.formatReleaseDate(episode.releaseDate || episode.release_date || '');
 
             const templateData = {
                 displayIndex: this.podcastModalState.offset + index + 1,
@@ -619,7 +622,7 @@ const Library = {
                 episodeName: episode.name || 'Untitled Episode',
                 imageUrl: imageUrl,
                 duration: duration,
-                releaseDate: episode.releaseDate || '',
+                releaseDate,
                 isSaved: this.savedEpisodeIds.has(episode.id),
                 showProgress: progressData.showProgress,
                 progressPercent: progressData.progressPercent,
@@ -1134,6 +1137,22 @@ const Library = {
         if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 
         return date.toLocaleDateString();
+    },
+
+    // Format episode release date for UI labels.
+    formatReleaseDate(value) {
+        if (!value) return '';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return String(value);
+        }
+
+        return date.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     },
 
     // Reset loaded state (called on logout)
