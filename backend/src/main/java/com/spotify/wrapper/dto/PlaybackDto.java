@@ -117,7 +117,7 @@ public class PlaybackDto {
         private boolean supportsVolume;
         private String type;
         @JsonProperty("volume_percent")
-        private int volumePercent;
+        private Integer volumePercent;
         
         public String getId() {
             return id;
@@ -175,11 +175,11 @@ public class PlaybackDto {
             this.type = type;
         }
         
-        public int getVolumePercent() {
+        public Integer getVolumePercent() {
             return volumePercent;
         }
         
-        public void setVolumePercent(int volumePercent) {
+        public void setVolumePercent(Integer volumePercent) {
             this.volumePercent = volumePercent;
         }
     }
