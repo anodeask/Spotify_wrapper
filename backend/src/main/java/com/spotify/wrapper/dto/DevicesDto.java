@@ -1,8 +1,10 @@
 package com.spotify.wrapper.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DevicesDto {
     private List<DeviceDto> devices;
     
@@ -14,6 +16,7 @@ public class DevicesDto {
         this.devices = devices;
     }
     
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DeviceDto {
         private String id;
         private String name;
@@ -24,8 +27,9 @@ public class DevicesDto {
         private boolean isPrivateSession;
         @JsonProperty("is_restricted")
         private boolean isRestricted;
+        // Nullable: Spotify returns null for devices that don't support or report volume
         @JsonProperty("volume_percent")
-        private int volumePercent;
+        private Integer volumePercent;
         @JsonProperty("supports_volume")
         private boolean supportsVolume;
         
@@ -54,6 +58,7 @@ public class DevicesDto {
             this.type = type;
         }
         
+        @JsonProperty("is_active")
         public boolean isActive() {
             return isActive;
         }
@@ -62,6 +67,7 @@ public class DevicesDto {
             isActive = active;
         }
         
+        @JsonProperty("is_private_session")
         public boolean isPrivateSession() {
             return isPrivateSession;
         }
@@ -70,6 +76,7 @@ public class DevicesDto {
             isPrivateSession = privateSession;
         }
         
+        @JsonProperty("is_restricted")
         public boolean isRestricted() {
             return isRestricted;
         }
@@ -78,14 +85,16 @@ public class DevicesDto {
             isRestricted = restricted;
         }
         
-        public int getVolumePercent() {
+        @JsonProperty("volume_percent")
+        public Integer getVolumePercent() {
             return volumePercent;
         }
         
-        public void setVolumePercent(int volumePercent) {
+        public void setVolumePercent(Integer volumePercent) {
             this.volumePercent = volumePercent;
         }
         
+        @JsonProperty("supports_volume")
         public boolean isSupportsVolume() {
             return supportsVolume;
         }
