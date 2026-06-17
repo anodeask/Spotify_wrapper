@@ -65,6 +65,25 @@ const PlayerModule = {
         });
         $('#refresh-queue-btn').on('click', this.updateQueue.bind(this));
         
+        // Podcast show name click handler
+        $(document).on('click', '.view-podcast-from-player', (e) => {
+            e.preventDefault();
+            const $link = $(e.currentTarget);
+            const showId = $link.data('show-id');
+            const showName = $link.data('show-name');
+            const imageUrl = $link.data('image');
+            
+            if (showId && Library) {
+                Library.handleViewShowEpisodes({
+                    currentTarget: $('<button>').data({
+                        id: showId,
+                        name: showName,
+                        image: imageUrl
+                    })[0]
+                });
+            }
+        });
+        
         // Stop event propagation on slider to prevent issues
         $('#volume-slider').on('mousedown touchstart', (e) => {
             e.stopPropagation();
@@ -165,7 +184,7 @@ const PlayerModule = {
             ? (track.show?.publisher || track.show?.name || 'Podcast')
             : ((track.artists || []).map(artist => artist.name).join(', ') || 'Unknown Artist');
         const artistLinks = isEpisode
-            ? Utils.escapeHtml(artists)
+            ? `<a href="#" class="text-decoration-none view-podcast-from-player" data-show-id="${Utils.escapeHtml(track.show?.id || '')}" data-show-name="${Utils.escapeHtml(track.show?.name || 'Podcast')}" data-image="${Utils.escapeHtml(imageUrl)}">${Utils.escapeHtml(artists)}</a>`
             : Utils.formatArtistLinks(track.artists || []);
         
         // Update track info
