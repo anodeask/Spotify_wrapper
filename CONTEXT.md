@@ -1,6 +1,6 @@
 # Spotify Wrapper - Project Context
 
-> **Last Updated:** June 3, 2026
+> **Last Updated:** July 6, 2026
 
 This document provides a comprehensive overview of the Spotify Wrapper project, including architecture, recent changes, and development notes.
 
@@ -236,6 +236,8 @@ spotify/
 - Track progress display (updates every 10 seconds)
 - Now playing info
 - Duplicate call prevention (`isUpdating` guard)
+- Polling is gated by browser tab visibility: polling pauses while tab is inactive and resumes with immediate refresh when tab becomes active.
+- Completion-trigger refresh: schedules a current-track poll 2 seconds after expected track end to reduce transition lag versus the 15-second polling cycle.
 - Current Queue panel rendering and refresh support
 - Queue rows rendered via Handlebars template (`queue-item-template`)
 - Queue rows include artwork for queued tracks and podcast episodes
@@ -301,6 +303,14 @@ const Config = {
 ---
 
 ## 📝 Recent Changes
+
+### July 6, 2026
+
+#### Player Polling Optimization: Active Tab + Track Completion Refresh
+- Updated `PlayerModule` polling flow so track/queue polling only runs while the browser tab is active.
+- Added `visibilitychange` handling to pause polling in inactive tabs and trigger an immediate track + queue refresh when tab becomes active again.
+- Added track-completion scheduling logic that triggers a current-track poll 2 seconds after predicted track end instead of waiting for the next 15-second loop.
+- Added cleanup for visibility listeners and completion timeouts in player teardown paths.
 
 ### June 3, 2026
 

@@ -14,6 +14,9 @@ const PlayerModule = {
     progressAnimationInterval: null,
     lastSyncProgressMs: 0,
     lastSyncTime: 0,
+    isTabActive: !document.hidden,
+    tabVisibilityHandler: null,
+    trackCompletionTimeout: null,
 
     // Initialize player module
     init() {
@@ -64,6 +67,11 @@ const PlayerModule = {
             $('#volume-slider').val(val).trigger('input');
         });
         $('#refresh-queue-btn').on('click', this.updateQueue.bind(this));
+
+        if (!this.tabVisibilityHandler) {
+            this.tabVisibilityHandler = this.handleTabVisibilityChange.bind(this);
+            document.addEventListener('visibilitychange', this.tabVisibilityHandler);
+        }
         
         // Podcast show name click handler
         $(document).on('click', '.view-podcast-from-player', (e) => {
@@ -89,6 +97,18 @@ const PlayerModule = {
             e.stopPropagation();
         });
     },
+
+    async handleTabVisibilityChange() {
+        this.isTabActive = !document.hidden;
+
+        if (!this.isTabActive) {
+            this.clearTrackCompletionPoll();
+            return;
+        }
+
+        await this.updateCurrentTrack();
+        await this.updateQueue();
+    },
     
     // Start the update loop for current track info
     startUpdateLoop() {
@@ -97,9 +117,11 @@ const PlayerModule = {
         }
         
         const scheduleNextUpdate = async () => {
-            await this.updateCurrentTrack();
-            if (Date.now() - this.lastQueueUpdateAt >= CONFIG.PLAYER.QUEUE_UPDATE_INTERVAL) {
-                await this.updateQueue();
+            if (this.isTabActive) {
+                await this.updateCurrentTrack();
+                if (Date.now() - this.lastQueueUpdateAt >= CONFIG.PLAYER.QUEUE_UPDATE_INTERVAL) {
+                    await this.updateQueue();
+                }
             }
             this.updateTimeout = setTimeout(scheduleNextUpdate, CONFIG.PLAYER.UPDATE_INTERVAL);
         };
@@ -112,6 +134,13 @@ const PlayerModule = {
         if (this.updateTimeout) {
             clearTimeout(this.updateTimeout);
             this.updateTimeout = null;
+        }
+
+        this.clearTrackCompletionPoll();
+
+        if (this.tabVisibilityHandler) {
+            document.removeEventListener('visibilitychange', this.tabVisibilityHandler);
+            this.tabVisibilityHandler = null;
         }
     },
     
@@ -199,6 +228,8 @@ const PlayerModule = {
         $('#track-duration').text(this.formatTime(durationMs));
         this.currentDurationMs = durationMs;
         this.currentProgressMs = progressMs;
+
+        this.scheduleTrackCompletionPoll(progressMs, durationMs, Boolean(trackData.is_playing));
         
         // Show track info, hide no-track message
         $('#track-info').removeClass('d-none');
@@ -254,12 +285,41 @@ const PlayerModule = {
     displayNoTrack() {
         $('#track-info').addClass('d-none');
         $('#no-track').removeClass('d-none');
+        this.clearTrackCompletionPoll();
         
         // Stop progress animation
         this.stopProgressAnimation();
         
         // Reset page title
         document.title = 'Spotify Wrapper';
+    },
+
+    scheduleTrackCompletionPoll(progressMs, durationMs, isPlaying) {
+        this.clearTrackCompletionPoll();
+
+        if (!this.isTabActive || !isPlaying || !durationMs || progressMs >= durationMs) {
+            return;
+        }
+
+        const remainingMs = Math.max(0, durationMs - progressMs);
+        const delayMs = remainingMs + 2000;
+
+        this.trackCompletionTimeout = setTimeout(async () => {
+            this.trackCompletionTimeout = null;
+
+            if (!this.isTabActive) {
+                return;
+            }
+
+            await this.updateCurrentTrack();
+        }, delayMs);
+    },
+
+    clearTrackCompletionPoll() {
+        if (this.trackCompletionTimeout) {
+            clearTimeout(this.trackCompletionTimeout);
+            this.trackCompletionTimeout = null;
+        }
     },
 
     async updateQueue() {

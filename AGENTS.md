@@ -45,6 +45,7 @@ Run from repository root unless noted.
 ## Working Conventions
 - Keep frontend code modular by feature file under [frontend/js](frontend/js).
 - Mandate template-first rendering in frontend: do not construct HTML UI blocks directly in JavaScript files under [frontend/js](frontend/js); define/reuse Handlebars templates in [frontend/index.html](frontend/index.html) and render via shared Utils helpers.
+- For player polling changes in [frontend/js/player.js](frontend/js/player.js): preserve active-tab gating (no background polling while tab is inactive) and preserve the post-completion refresh trigger (poll ~2 seconds after expected track end).
 - Keep backend endpoint behavior aligned with DTOs in [backend/src/main/java/com/spotify/wrapper/dto](backend/src/main/java/com/spotify/wrapper/dto).
 - Preserve user-facing error quality: backend should propagate meaningful Spotify API status/messages and frontend should surface via in-app alerts (not browser alerts).
 - Prefer minimal, targeted patches. Do not refactor unrelated files in the same change.
