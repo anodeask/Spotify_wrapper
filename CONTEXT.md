@@ -1,6 +1,6 @@
 # Spotify Wrapper - Project Context
 
-> **Last Updated:** July 6, 2026
+> **Last Updated:** July 7, 2026
 
 This document provides a comprehensive overview of the Spotify Wrapper project, including architecture, recent changes, and development notes.
 
@@ -303,6 +303,17 @@ const Config = {
 ---
 
 ## 📝 Recent Changes
+
+### July 7, 2026
+
+#### Devices Empty-State Handling (No Active Devices)
+- Updated devices retrieval flow to gracefully handle Spotify no-device responses instead of surfacing generic failures.
+- Backend `getDevices` path now treats `204 No Content`, blank response payloads, and null device arrays as an empty `devices` list.
+- Frontend `SpotifyAPI.getDevices()` includes a defensive fallback that maps known no-active-device responses to `{ devices: [] }`.
+
+#### Reason
+- Spotify can return no-device states that are valid user conditions, not application errors.
+- Converting these responses into an empty list keeps UX stable (shows empty state) and avoids misleading "Something went wrong" exceptions.
 
 ### July 6, 2026
 

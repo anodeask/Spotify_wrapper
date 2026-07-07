@@ -64,7 +64,16 @@ const SpotifyAPI = {
         const params = new URLSearchParams({
             userId: this.userId
         });
-        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.DEVICES}?${params}`);
+
+        try {
+            return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.DEVICES}?${params}`);
+        } catch (error) {
+            const message = (error?.message || '').toLowerCase();
+            if (message.includes('no active device') || message.includes('no active devices')) {
+                return { devices: [] };
+            }
+            throw error;
+        }
     },
     currentTrackRequest:undefined,
     // Get currently playing track

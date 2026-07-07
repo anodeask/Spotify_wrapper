@@ -266,9 +266,27 @@ public class SpotifyService {
             logger.info("Spotify API /me/player/devices took {}ms", apiEndTime - apiStartTime);
 
             int statusCode = response.getStatusLine().getStatusCode();
+
+            if (statusCode == 204) {
+                logger.debug("No devices available (204 response)");
+                DevicesDto emptyResult = new DevicesDto();
+                emptyResult.setDevices(Collections.emptyList());
+                long endTime = System.currentTimeMillis();
+                logger.info("=== GET DEVICES METHOD COMPLETED in {}ms (API: {}ms) - No devices ===", endTime - startTime, apiEndTime - apiStartTime);
+                return emptyResult;
+            }
             
             String responseBody = EntityUtils.toString(response.getEntity());
             EntityUtils.consume(response.getEntity());
+
+            if (responseBody == null || responseBody.isBlank()) {
+                logger.debug("Devices response body is empty");
+                DevicesDto emptyResult = new DevicesDto();
+                emptyResult.setDevices(Collections.emptyList());
+                long endTime = System.currentTimeMillis();
+                logger.info("=== GET DEVICES METHOD COMPLETED in {}ms (API: {}ms) - Empty response body ===", endTime - startTime, apiEndTime - apiStartTime);
+                return emptyResult;
+            }
 
             if (statusCode >= 400) {
                 logger.error("Get devices request failed with status {}: {}", statusCode, responseBody);
@@ -276,6 +294,9 @@ public class SpotifyService {
             }
             
             DevicesDto result = objectMapper.readValue(responseBody, DevicesDto.class);
+            if (result.getDevices() == null) {
+                result.setDevices(Collections.emptyList());
+            }
             long endTime = System.currentTimeMillis();
             logger.info("=== GET DEVICES METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
             return result;
