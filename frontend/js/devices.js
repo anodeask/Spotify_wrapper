@@ -1,14 +1,23 @@
 // Devices module for managing Spotify devices
 const DevicesModule = {
+    templates: {},
     devices: [],
     activeDevice: null,
     refreshInterval: null,
     
     // Initialize devices module
     init() {
+        this.compileTemplates();
         this.bindEvents();
         this.loadDevices();
         this.startAutoRefresh();
+    },
+
+    compileTemplates() {
+        const deviceCardTemplate = document.getElementById('device-card-template');
+        if (deviceCardTemplate) {
+            this.templates.deviceCard = Handlebars.compile(deviceCardTemplate.innerHTML);
+        }
     },
     
     // Bind device-related events
@@ -51,68 +60,43 @@ const DevicesModule = {
         });
         
         $devicesList.html(html);
+        this.applyDeviceVolumeWidths($devicesList);
         
         // Update active device
         this.activeDevice = this.devices.find(d => d.is_active) || null;
     },
+
+    applyDeviceVolumeWidths($scope) {
+        $scope.find('.js-device-volume-bar').each((_, element) => {
+            const value = Number($(element).data('volume'));
+            const volume = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+            element.style.width = `${volume}%`;
+        });
+    },
     
     // Render a single device card
     renderDevice(device) {
+        if (!this.templates.deviceCard) {
+            return '';
+        }
+
         const deviceIcon = this.getDeviceIcon(device.type);
         const isActive = device.is_active;
         const cardClass = isActive ? 'device-card active border-success' : 'device-card';
         const statusClass = isActive ? 'device-status active' : 'device-status inactive';
-        const volumePercent = device.volume_percent || 0;
-        
-        return `
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card ${cardClass}" data-device-id="${device.id}">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="me-3">
-                                <i class="${deviceIcon} fa-2x text-primary"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="card-title mb-1">${Utils.truncateText(device.name, 20)}</h6>
-                                <div class="d-flex align-items-center">
-                                    <span class="${statusClass}"></span>
-                                    <small class="text-muted">${isActive ? 'Active' : 'Available'}</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="device-info">
-                            <div class="row align-items-center mb-2">
-                                <div class="col">
-                                    <small class="text-muted">Volume</small>
-                                </div>
-                                <div class="col-auto">
-                                    <small class="text-muted">${volumePercent}%</small>
-                                </div>
-                            </div>
-                            <div class="progress mb-3" style="height: 4px;">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: ${volumePercent}%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="device-actions">
-                            ${!isActive ? `
-                                <button class="btn btn-outline-success btn-sm transfer-btn w-100" 
-                                        data-device-id="${device.id}">
-                                    <i class="fas fa-exchange-alt me-1"></i>Transfer Playback
-                                </button>
-                            ` : `
-                                <div class="text-center text-success">
-                                    <i class="fas fa-check-circle me-1"></i>
-                                    <small>Currently Active</small>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        const rawVolume = Number.isFinite(device.volume_percent) ? device.volume_percent : Number(device.volume_percent || 0);
+        const volumePercent = Math.max(0, Math.min(100, Number.isFinite(rawVolume) ? rawVolume : 0));
+
+        return this.templates.deviceCard({
+            cardClass,
+            deviceId: device.id,
+            deviceIcon,
+            deviceName: Utils.truncateText(device.name, 20),
+            statusClass,
+            statusLabel: isActive ? 'Active' : 'Available',
+            volumePercent,
+            isActive
+        });
     },
     
     // Get device icon based on type

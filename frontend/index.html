@@ -707,6 +707,55 @@
             </div>
         </div>
     </script>
+
+    <!-- Device Card Template -->
+    <script id="device-card-template" type="text/x-handlebars-template">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card {{cardClass}}" data-device-id="{{deviceId}}">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="{{deviceIcon}} fa-2x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">{{deviceName}}</h6>
+                            <div class="d-flex align-items-center">
+                                <span class="{{statusClass}}"></span>
+                                <small class="text-muted">{{statusLabel}}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="device-info">
+                        <div class="row align-items-center mb-2">
+                            <div class="col">
+                                <small class="text-muted">Volume</small>
+                            </div>
+                            <div class="col-auto">
+                                <small class="text-muted">{{volumePercent}}%</small>
+                            </div>
+                        </div>
+                        <div class="progress mb-3" style="height: 4px;">
+                            <div class="progress-bar js-device-volume-bar" role="progressbar" data-volume="{{volumePercent}}" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="device-actions">
+                        {{#unless isActive}}
+                        <button class="btn btn-outline-success btn-sm transfer-btn w-100" data-device-id="{{deviceId}}">
+                            <i class="fas fa-exchange-alt me-1"></i>Transfer Playback
+                        </button>
+                        {{else}}
+                        <div class="text-center text-success">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <small>Currently Active</small>
+                        </div>
+                        {{/unless}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
     
     <!-- Library Playlist Template -->
     <script id="library-playlist-template" type="text/x-handlebars-template">

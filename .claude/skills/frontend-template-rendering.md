@@ -14,6 +14,11 @@ Implement UI changes without building HTML strings inside feature JS modules.
 3. Pass normalized data from module to template renderer.
 4. Keep behavior and event delegation in JS, not markup string assembly.
 
+## Project-Specific Reference
+- Devices cards are rendered via `device-card-template` in `frontend/index.html` and compiled in `frontend/js/devices.js`.
+- Keep this pattern when changing device UI: update template + data mapping, not string HTML construction.
+- For progress-like values in templates, prefer `data-*` attributes and apply styles in JS after render when templated inline styles cause tooling/diagnostic issues.
+
 ## Anti-Patterns
 - Massive inline `$.html(` blocks in `frontend/js/*.js`.
 - Duplicated loading/error markup across modules.
@@ -22,3 +27,4 @@ Implement UI changes without building HTML strings inside feature JS modules.
 - Rendering comes from templates.
 - Data mapping is explicit and resilient to missing fields.
 - Existing CSS classes and UX semantics are preserved.
+- Device UI changes preserve delegated events (`.device-card`, `.transfer-btn`) and do not regress transfer playback actions.

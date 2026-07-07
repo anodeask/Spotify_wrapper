@@ -2,6 +2,22 @@
 
 ## Implementation Update (May 2026)
 
+### Devices Empty-State and Template Refactor (July 7, 2026)
+- Updated device loading flow to treat no-active-device responses as valid empty state instead of failures.
+- Backend `SpotifyService.getDevices()` now gracefully handles:
+   - `204 No Content`
+   - blank response payload
+   - null `devices` array
+   by returning an empty `devices` list.
+- Frontend `SpotifyAPI.getDevices()` adds defensive fallback mapping for no-active-device errors to `{ devices: [] }`.
+- Result: Devices tab now renders empty-state UI consistently instead of generic "Something went wrong" errors when user has no active Spotify devices.
+
+#### Devices Rendering Migration (Template-First)
+- Migrated device card markup from inline string construction in `frontend/js/devices.js` to Handlebars template in `frontend/index.html` (`device-card-template`).
+- Added template compilation in `DevicesModule` and refactored `renderDevice()` to pass normalized template data.
+- Added post-render volume width application via `data-volume` binding to avoid inline style construction edge cases.
+- Benefit: aligns with template-first mandate, improves maintainability, and keeps device UI structure centralized.
+
 ### Frontend Rendering Mandate (June 3, 2026)
 - Mandate adopted: avoid constructing HTML strings in JavaScript modules under `frontend/js`.
 - New UI rendering must use Handlebars templates defined in `frontend/index.html` and rendered through shared helpers in `Utils`.

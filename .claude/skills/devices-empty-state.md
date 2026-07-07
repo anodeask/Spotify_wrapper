@@ -17,7 +17,14 @@ Handle no-device conditions gracefully and avoid generic error UX.
 ## Frontend Requirements
 - `SpotifyAPI.getDevices` should defensively map known no-active-device errors to `{ devices: [] }`.
 - `DevicesModule.displayDevices` should render empty message when list is empty.
+- Device cards should be rendered from `device-card-template` in `frontend/index.html`, not inline HTML in `frontend/js/devices.js`.
+- Volume progress width should be applied after render from `data-volume` values (for example via `.js-device-volume-bar`), not from templated inline style expressions.
+
+## Implementation Notes (Current Repo)
+- `frontend/js/devices.js` compiles templates in `compileTemplates()` and renders cards through `renderDevice()`.
+- Backend devices flow now normalizes no-device cases to empty list before returning JSON.
 
 ## Done Criteria
 - No thrown exception for no-device user state.
 - Devices tab consistently shows empty-state guidance.
+- Devices card UI continues rendering through Handlebars template path.
