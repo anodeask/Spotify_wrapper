@@ -225,6 +225,7 @@ spotify/
 - Device list rendering
 - Device selection for playback
 - Transfer playback functionality
+- Polling is gated by browser tab visibility: polling pauses while tab is inactive and reloads immediately on tab activation.
 
 ### `player.js`
 - Playback controls (play, pause, next, previous)
@@ -236,7 +237,7 @@ spotify/
 - Track progress display (updates every 10 seconds)
 - Now playing info
 - Duplicate call prevention (`isUpdating` guard)
-- Polling is gated by browser tab visibility: polling pauses while tab is inactive and resumes with immediate refresh when tab becomes active.
+- Polling is gated by browser tab visibility: polling pauses while tab is inactive and reloads immediately on tab activation.
 - Completion-trigger refresh: schedules a current-track poll 2 seconds after expected track end to reduce transition lag versus the 15-second polling cycle.
 - Current Queue panel rendering and refresh support
 - Queue rows rendered via Handlebars template (`queue-item-template`)
@@ -311,6 +312,11 @@ const Config = {
 - Backend `getDevices` path now treats `204 No Content`, blank response payloads, and null device arrays as an empty `devices` list.
 - Frontend `SpotifyAPI.getDevices()` includes a defensive fallback that maps known no-active-device responses to `{ devices: [] }`.
 
+#### Devices Polling Optimization: Active Tab Refresh
+- Updated `DevicesModule` auto-refresh flow so polling runs only while the browser tab is active.
+- Added `visibilitychange` handling to pause polling in inactive tabs and trigger immediate devices refresh on tab activation.
+- Added cleanup for visibility listeners in devices module teardown path.
+
 #### Reason
 - Spotify can return no-device states that are valid user conditions, not application errors.
 - Converting these responses into an empty list keeps UX stable (shows empty state) and avoids misleading "Something went wrong" exceptions.
@@ -318,8 +324,8 @@ const Config = {
 ### July 6, 2026
 
 #### Player Polling Optimization: Active Tab + Track Completion Refresh
-- Updated `PlayerModule` polling flow so track/queue polling only runs while the browser tab is active.
-- Added `visibilitychange` handling to pause polling in inactive tabs and trigger an immediate track + queue refresh when tab becomes active again.
+- Updated `PlayerModule` polling flow so polling runs only while the browser tab is active.
+- Added `visibilitychange` handling to pause polling in inactive tabs and trigger immediate track + queue refresh on tab activation.
 - Added track-completion scheduling logic that triggers a current-track poll 2 seconds after predicted track end instead of waiting for the next 15-second loop.
 - Added cleanup for visibility listeners and completion timeouts in player teardown paths.
 

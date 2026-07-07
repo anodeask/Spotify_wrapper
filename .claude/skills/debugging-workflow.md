@@ -16,6 +16,7 @@ Debug issues quickly with low-risk, high-signal steps.
 ## Frequent Pitfalls in This Repo
 - OAuth scope drift or stale token/session state.
 - No active Spotify device mistaken for code failure.
+- Devices background polling continuing while tab is inactive due to missing visibility gating/cleanup.
 - Runtime process drift (old backend process still running).
 - Duplication drift when template-first convention is not followed.
 

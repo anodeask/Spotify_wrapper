@@ -17,5 +17,6 @@ Validate functional changes quickly and safely.
 
 ## Change-Specific Validation
 - For API contract changes: verify both backend payload and frontend usage.
-- For polling changes: verify timer/listener cleanup and inactive-tab behavior.
+- For polling changes: verify polling is paused while tab is inactive, immediate reload happens on tab activation, and timer/listener cleanup is correct.
 - For devices changes: verify empty-state render when no active device exists.
+- For devices polling changes: verify no `getDevices` calls while tab is inactive and immediate refresh when tab becomes active.

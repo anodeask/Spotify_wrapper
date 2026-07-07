@@ -19,9 +19,9 @@ This file is the primary instruction document for AI agents working in this repo
 - Preserve frontend template-first rendering.
 - Avoid constructing UI HTML directly inside files under `frontend/js`.
 - Reuse/extend Handlebars templates in `frontend/index.html` and shared helpers in `Utils`.
-- Preserve player polling behavior:
-  - No background polling while tab is inactive.
-  - Post-completion refresh around 2 seconds after expected track end.
+- Preserve global polling behavior:
+  - Pause any and all polling while tab is inactive.
+  - Reload immediately on tab activation, then continue normal polling cadence.
 - Treat no-active-device responses as valid empty state, not fatal errors.
 
 ## Run Commands

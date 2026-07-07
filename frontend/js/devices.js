@@ -4,10 +4,13 @@ const DevicesModule = {
     devices: [],
     activeDevice: null,
     refreshInterval: null,
+    isTabActive: !document.hidden,
+    tabVisibilityHandler: null,
     
     // Initialize devices module
     init() {
         this.compileTemplates();
+        this.bindVisibilityEvents();
         this.bindEvents();
         this.loadDevices();
         this.startAutoRefresh();
@@ -27,6 +30,22 @@ const DevicesModule = {
         // Delegate events for dynamically created device cards
         $('#devices-list').on('click', '.device-card', this.handleDeviceSelect.bind(this));
         $('#devices-list').on('click', '.transfer-btn', this.handleTransferPlayback.bind(this));
+    },
+
+    bindVisibilityEvents() {
+        if (this.tabVisibilityHandler) {
+            return;
+        }
+
+        this.tabVisibilityHandler = () => {
+            this.isTabActive = !document.hidden;
+
+            if (this.isTabActive) {
+                this.loadDevices();
+            }
+        };
+
+        document.addEventListener('visibilitychange', this.tabVisibilityHandler);
     },
     
     // Load available devices
@@ -171,7 +190,9 @@ const DevicesModule = {
         }
         
         this.refreshInterval = setInterval(() => {
-            this.loadDevices();
+            if (this.isTabActive) {
+                this.loadDevices();
+            }
         }, CONFIG.DEVICE_REFRESH_INTERVAL);
     },
     
@@ -219,6 +240,11 @@ const DevicesModule = {
     // Cleanup when module is destroyed
     destroy() {
         this.stopAutoRefresh();
+
+        if (this.tabVisibilityHandler) {
+            document.removeEventListener('visibilitychange', this.tabVisibilityHandler);
+            this.tabVisibilityHandler = null;
+        }
     }
 };
 

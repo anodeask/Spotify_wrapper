@@ -4,8 +4,8 @@
 Preserve and extend player polling without regressions.
 
 ## Required Behavior
-- Polling for current track and queue should run only while tab is active.
-- On tab becoming active, force immediate refresh.
+- Pause polling while tab is inactive.
+- On tab activation, force immediate reload before normal polling cadence continues.
 - Schedule a post-completion refresh roughly 2 seconds after expected track end.
 
 ## Touch Points
