@@ -209,8 +209,12 @@ public class AuthController {
     
     private User saveOrUpdateUser(Map<String, String> profile, String accessToken, String refreshToken, int expiresIn) {
         String spotifyUserId = profile.get("id");
-        String displayName = profile.get("display_name");
-        String email = profile.get("email");
+        if (spotifyUserId == null || spotifyUserId.isBlank()) {
+            throw new IllegalStateException("Spotify profile is missing required user id");
+        }
+
+        String displayNameFromProfile = profile.get("display_name");
+        String emailFromProfile = profile.get("email");
         
         Optional<User> existingUser = userRepository.findBySpotifyUserId(spotifyUserId);
         
@@ -221,20 +225,41 @@ public class AuthController {
                 user.setRefreshToken(refreshToken);
             }
             user.setTokenExpiresAt(LocalDateTime.now().plusSeconds(expiresIn));
-            user.setDisplayName(displayName);
-            user.setEmail(email);
+
+            String resolvedDisplayName = firstNonBlank(displayNameFromProfile, user.getDisplayName(), spotifyUserId, "Spotify User");
+            String resolvedEmail = firstNonBlank(emailFromProfile, user.getEmail(), spotifyUserId + "@spotify.local");
+
+            user.setDisplayName(resolvedDisplayName);
+            user.setEmail(resolvedEmail);
             return userRepository.save(user);
         } else {
+            String resolvedDisplayName = firstNonBlank(displayNameFromProfile, spotifyUserId, "Spotify User");
+            String resolvedEmail = firstNonBlank(emailFromProfile, spotifyUserId + "@spotify.local");
+
             User newUser = new User(
                     spotifyUserId,
-                    displayName,
-                    email,
+                    resolvedDisplayName,
+                    resolvedEmail,
                     accessToken,
-                    refreshToken,
+                    firstNonBlank(refreshToken, "no-refresh-token"),
                     LocalDateTime.now().plusSeconds(expiresIn)
             );
             return userRepository.save(newUser);
         }
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+
+        return "";
     }
     
     private String generateState() {

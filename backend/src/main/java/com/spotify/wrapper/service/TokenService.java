@@ -124,7 +124,11 @@ public class TokenService {
     public UserTokenInfo getUserTokenInfo(String userId) {
         long dbStartTime = System.currentTimeMillis();
         User user = userRepository.findBySpotifyUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+            .orElseThrow(() -> new SpotifyApiException(
+                404,
+                "User not found: " + userId,
+                ""
+            ));
         long dbEndTime = System.currentTimeMillis();
         logger.debug("DB lookup took {}ms for userId: {}", dbEndTime - dbStartTime, userId);
         
@@ -141,7 +145,11 @@ public class TokenService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveNewToken(String userId, String accessToken, int expiresIn) {
         User user = userRepository.findBySpotifyUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+            .orElseThrow(() -> new SpotifyApiException(
+                404,
+                "User not found: " + userId,
+                ""
+            ));
         user.setAccessToken(accessToken);
         user.setTokenExpiresAt(LocalDateTime.now().plusSeconds(expiresIn));
         userRepository.save(user);

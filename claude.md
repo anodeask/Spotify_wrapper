@@ -23,6 +23,7 @@ This file is the primary instruction document for AI agents working in this repo
   - Pause any and all polling while tab is inactive.
   - Reload immediately on tab activation, then continue normal polling cadence.
 - Treat no-active-device responses as valid empty state, not fatal errors.
+- For `current-track` polling, treat transient Spotify `/me/player` 5xx as recoverable: try currently-playing fallback and otherwise return a structured empty playback state instead of surfacing backend 500.
 
 ## Run Commands
 - Start all: `./start.sh`

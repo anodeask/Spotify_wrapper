@@ -329,12 +329,29 @@ public class SpotifyService {
                 logger.debug("No playback currently active (204 response)");
                 long endTime = System.currentTimeMillis();
                 logger.info("=== GET CURRENT PLAYBACK METHOD COMPLETED in {}ms (API: {}ms) - No active playback ===", endTime - startTime, apiEndTime - apiStartTime);
-                return null;
+                return createEmptyPlaybackState();
             }
             
             String responseBody = EntityUtils.toString(response.getEntity());
             EntityUtils.consume(response.getEntity());
             logger.debug("Response body: {}", responseBody);
+
+            if (statusCode >= 500) {
+                // Spotify intermittently returns transient 5xx for /me/player.
+                // Try currently-playing endpoint before falling back to empty state.
+                logger.warn("Transient Spotify /me/player failure (status {}). Trying currently-playing fallback.", statusCode);
+                PlaybackDto fallbackPlayback = fetchCurrentlyPlayingFallback(accessToken);
+                if (fallbackPlayback != null && fallbackPlayback.getItem() != null) {
+                    long endTime = System.currentTimeMillis();
+                    logger.info("=== GET CURRENT PLAYBACK METHOD COMPLETED in {}ms (API: {}ms) - Recovered via currently-playing fallback ===", endTime - startTime, apiEndTime - apiStartTime);
+                    return fallbackPlayback;
+                }
+
+                logger.warn("Currently-playing fallback did not return playable item. Returning empty playback state.");
+                long endTime = System.currentTimeMillis();
+                logger.info("=== GET CURRENT PLAYBACK METHOD COMPLETED in {}ms (API: {}ms) - Transient upstream failure ===", endTime - startTime, apiEndTime - apiStartTime);
+                return createEmptyPlaybackState();
+            }
 
             if (statusCode >= 400) {
                 logger.error("Get current playback request failed with status {}: {}", statusCode, responseBody);
@@ -390,6 +407,42 @@ public class SpotifyService {
             logger.warn("Fallback currently-playing request threw exception", ex);
             return null;
         }
+    }
+
+    private PlaybackDto fetchCurrentlyPlayingFallback(String accessToken) {
+        String url = SPOTIFY_API_BASE_URL + "/me/player/currently-playing?additional_types=track,episode";
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 204) {
+                EntityUtils.consume(response.getEntity());
+                return null;
+            }
+
+            String responseBody = EntityUtils.toString(response.getEntity());
+            EntityUtils.consume(response.getEntity());
+
+            if (statusCode >= 400) {
+                logger.warn("Fallback currently-playing request failed with status {}: {}", statusCode, responseBody);
+                return null;
+            }
+
+            return objectMapper.readValue(responseBody, PlaybackDto.class);
+        } catch (Exception ex) {
+            logger.warn("Fallback currently-playing request threw exception", ex);
+            return null;
+        }
+    }
+
+    private PlaybackDto createEmptyPlaybackState() {
+        PlaybackDto playback = new PlaybackDto();
+        playback.setPlaying(false);
+        playback.setCurrentlyPlayingType("none");
+        playback.setProgressMs(0);
+        playback.setTimestamp(System.currentTimeMillis());
+        return playback;
     }
     
     public void play(String userId, String deviceId, String trackUri) throws IOException {
