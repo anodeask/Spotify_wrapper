@@ -17,6 +17,8 @@ const PlayerModule = {
     isTabActive: !document.hidden,
     tabVisibilityHandler: null,
     trackCompletionTimeout: null,
+    repeatState: 'off',
+    shuffleState: false,
 
     // Initialize player module
     init() {
@@ -67,6 +69,8 @@ const PlayerModule = {
             $('#volume-slider').val(val).trigger('input');
         });
         $('#refresh-queue-btn').on('click', this.updateQueue.bind(this));
+        $('#repeat-btn').on('click', this.handleRepeat.bind(this));
+        $('#shuffle-btn').on('click', this.handleShuffle.bind(this));
 
         if (!this.tabVisibilityHandler) {
             this.tabVisibilityHandler = this.handleTabVisibilityChange.bind(this);
@@ -168,6 +172,10 @@ const PlayerModule = {
                 this.currentTrack = response.item;
                 this.isPlaying = response.is_playing;
                 this.deviceId = response.device?.id || null;
+                this.repeatState = response.repeat_state || 'off';
+                this.shuffleState = Boolean(response.shuffle_state);
+                this.updateRepeatButton();
+                this.updateShuffleButton();
                 this.updateVolumeControlState(response.device);
                 if (typeof response.device?.volume_percent === 'number') {
                     $('#volume-slider').val(response.device.volume_percent);
@@ -592,6 +600,69 @@ const PlayerModule = {
         } catch (error) {
             console.error('Failed to seek:', error);
             Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
+        }
+    },
+
+    async handleRepeat() {
+        const next = { off: 'context', context: 'track', track: 'off' };
+        const nextState = next[this.repeatState] || 'off';
+        try {
+            await SpotifyAPI.setRepeat(nextState, this.deviceId);
+            this.repeatState = nextState;
+            this.updateRepeatButton();
+        } catch (error) {
+            console.error('Failed to set repeat:', error);
+            Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
+        }
+    },
+
+    async handleShuffle() {
+        const nextState = !this.shuffleState;
+        try {
+            await SpotifyAPI.setShuffle(nextState, this.deviceId);
+            this.shuffleState = nextState;
+            this.updateShuffleButton();
+        } catch (error) {
+            console.error('Failed to set shuffle:', error);
+            Utils.showError(error.message || CONFIG.ERRORS.PLAYBACK_FAILED);
+        }
+    },
+
+    updateRepeatButton() {
+        const $btn = $('#repeat-btn');
+        const $icon = $btn.find('i');
+        $btn.attr('data-repeat', this.repeatState);
+        $btn.removeClass('btn-outline-secondary btn-primary active');
+
+        if (this.repeatState === 'off') {
+            $btn.addClass('btn-outline-secondary');
+            $btn.attr('aria-label', 'Repeat off').attr('aria-pressed', 'false').attr('title', 'Repeat off');
+            $icon.attr('class', 'fas fa-redo');
+            $btn.find('.repeat-badge').remove();
+        } else if (this.repeatState === 'context') {
+            $btn.addClass('btn-primary active');
+            $btn.attr('aria-label', 'Repeat context').attr('aria-pressed', 'true').attr('title', 'Repeat context');
+            $icon.attr('class', 'fas fa-redo');
+            $btn.find('.repeat-badge').remove();
+        } else {
+            $btn.addClass('btn-primary active');
+            $btn.attr('aria-label', 'Repeat track').attr('aria-pressed', 'true').attr('title', 'Repeat track');
+            $icon.attr('class', 'fas fa-redo');
+            if (!$btn.find('.repeat-badge').length) {
+                $btn.append('<span class="repeat-badge" style="font-size:0.6em;vertical-align:super;margin-left:1px;">1</span>');
+            }
+        }
+    },
+
+    updateShuffleButton() {
+        const $btn = $('#shuffle-btn');
+        $btn.removeClass('btn-outline-secondary btn-primary active');
+        if (this.shuffleState) {
+            $btn.addClass('btn-primary active');
+            $btn.attr('aria-pressed', 'true').attr('title', 'Shuffle on');
+        } else {
+            $btn.addClass('btn-outline-secondary');
+            $btn.attr('aria-pressed', 'false').attr('title', 'Shuffle off');
         }
     },
 

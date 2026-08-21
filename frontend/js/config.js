@@ -40,7 +40,9 @@ const CONFIG = {
             RECENTLY_PLAYED: '/api/spotify/me/recently-played',
             ALBUM_TRACKS: '/api/spotify/albums/tracks',
             PODCAST_SEARCH: '/api/spotify/podcasts/search',
-            PODCAST_DETAILS: '/api/spotify/podcasts'
+            PODCAST_DETAILS: '/api/spotify/podcasts',
+            REPEAT: '/api/spotify/repeat',
+            SHUFFLE: '/api/spotify/shuffle'
         }
     },
     

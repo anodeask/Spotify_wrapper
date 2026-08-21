@@ -221,6 +221,40 @@ public class SpotifyController {
         }
     }
 
+    @PutMapping("/repeat")
+    public ResponseEntity<Void> setRepeat(
+            @RequestParam String userId,
+            @RequestParam String state,
+            @RequestParam(required = false) String deviceId) {
+        logger.info("Set repeat request - userId: {}, state: {}, deviceId: {}", userId, state, deviceId);
+
+        try {
+            spotifyService.setRepeat(userId, state, deviceId);
+            logger.info("Repeat set successfully for userId: {} to state: {}", userId, state);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            logger.error("Failed to set repeat for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PutMapping("/shuffle")
+    public ResponseEntity<Void> setShuffle(
+            @RequestParam String userId,
+            @RequestParam boolean state,
+            @RequestParam(required = false) String deviceId) {
+        logger.info("Set shuffle request - userId: {}, state: {}, deviceId: {}", userId, state, deviceId);
+
+        try {
+            spotifyService.setShuffle(userId, state, deviceId);
+            logger.info("Shuffle set successfully for userId: {} to state: {}", userId, state);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            logger.error("Failed to set shuffle for userId: {}", userId, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @GetMapping("/queue")
     public ResponseEntity<QueueDto> getQueue(@RequestParam String userId) {
         logger.info("Get queue request for userId: {}", userId);

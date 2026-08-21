@@ -176,6 +176,36 @@ const SpotifyAPI = {
         });
     },
 
+    // Set repeat mode: 'off' | 'context' | 'track'
+    async setRepeat(state, deviceId = null) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            state: state
+        });
+        if (deviceId) {
+            params.append('deviceId', deviceId);
+        }
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.REPEAT}?${params}`, {
+            method: 'PUT'
+        });
+    },
+
+    // Set shuffle on/off
+    async setShuffle(state, deviceId = null) {
+        const params = new URLSearchParams({
+            userId: this.userId,
+            state: state
+        });
+        if (deviceId) {
+            params.append('deviceId', deviceId);
+        }
+
+        return await this.makeRequest(`${CONFIG.ENDPOINTS.SPOTIFY.SHUFFLE}?${params}`, {
+            method: 'PUT'
+        });
+    },
+
     // Set volume
     async setVolume(volume, deviceId = null) {
         const params = new URLSearchParams({

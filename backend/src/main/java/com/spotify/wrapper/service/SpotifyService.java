@@ -738,6 +738,72 @@ public class SpotifyService {
         }
     }
 
+    public void setRepeat(String userId, String state, String deviceId) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== SET REPEAT METHOD CALLED ===");
+        logger.debug("userId: {}, state: {}, deviceId: {}", userId, state, deviceId);
+
+        String accessToken = tokenService.getAccessToken(userId);
+
+        String url = SPOTIFY_API_BASE_URL + "/me/player/repeat?state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+        if (deviceId != null && !deviceId.isEmpty()) {
+            url += "&device_id=" + deviceId;
+        }
+
+        HttpPut request = new HttpPut(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /me/player/repeat took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode >= 400) {
+                String responseBody = EntityUtils.toString(response.getEntity());
+                logger.error("Set repeat request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+            EntityUtils.consume(response.getEntity());
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== SET REPEAT METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
+    public void setShuffle(String userId, boolean state, String deviceId) throws IOException {
+        long startTime = System.currentTimeMillis();
+        logger.debug("=== SET SHUFFLE METHOD CALLED ===");
+        logger.debug("userId: {}, state: {}, deviceId: {}", userId, state, deviceId);
+
+        String accessToken = tokenService.getAccessToken(userId);
+
+        String url = SPOTIFY_API_BASE_URL + "/me/player/shuffle?state=" + state;
+        if (deviceId != null && !deviceId.isEmpty()) {
+            url += "&device_id=" + deviceId;
+        }
+
+        HttpPut request = new HttpPut(url);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+
+        long apiStartTime = System.currentTimeMillis();
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            long apiEndTime = System.currentTimeMillis();
+            logger.info("Spotify API /me/player/shuffle took {}ms", apiEndTime - apiStartTime);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode >= 400) {
+                String responseBody = EntityUtils.toString(response.getEntity());
+                logger.error("Set shuffle request failed with status {}: {}", statusCode, responseBody);
+                throwSpotifyApiError(statusCode, responseBody);
+            }
+            EntityUtils.consume(response.getEntity());
+
+            long endTime = System.currentTimeMillis();
+            logger.info("=== SET SHUFFLE METHOD COMPLETED in {}ms (API: {}ms) ===", endTime - startTime, apiEndTime - apiStartTime);
+        }
+    }
+
     public QueueDto getQueue(String userId) throws IOException {
         long startTime = System.currentTimeMillis();
         logger.debug("=== GET QUEUE METHOD CALLED ===");
