@@ -11,7 +11,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
 }
 
 .loading-screen {
@@ -291,7 +292,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--bs-tertiary-bg);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -309,7 +310,7 @@ body {
 }
 
 #library-tab .nav-tabs .nav-link {
-    color: var(--spotify-grey);
+    color: var(--bs-secondary-color);
     border: none;
     border-bottom: 3px solid transparent;
     padding: 0.75rem 1.5rem;
@@ -336,7 +337,7 @@ body {
 /* Pagination styles */
 .pagination .page-link {
     color: var(--spotify-green);
-    border-color: #dee2e6;
+    border-color: var(--bs-border-color);
 }
 
 .pagination .page-item.active .page-link {
@@ -352,7 +353,7 @@ body {
 }
 
 .pagination .page-item.disabled .page-link {
-    color: #6c757d;
+    color: var(--bs-secondary-color);
 }
 
 #liked-songs-pagination,
@@ -384,4 +385,124 @@ body {
 .detail-track-num {
     color: var(--bs-secondary-color, #6c757d);
     font-variant-numeric: tabular-nums;
+}
+
+/* Light mode keeps the original soft grey page background */
+:root[data-bs-theme="light"] body {
+    background-color: #f8f9fa;
+}
+
+/* Dark mode (follows device setting via data-bs-theme set in index.html) */
+:root[data-bs-theme="dark"] {
+    --bs-body-bg: var(--spotify-dark-grey);
+    --bs-body-bg-rgb: 18, 18, 18;
+    --bs-tertiary-bg: #1e1e1e;
+    --bs-tertiary-bg-rgb: 30, 30, 30;
+    --bs-secondary-bg: #282828;
+    --bs-secondary-bg-rgb: 40, 40, 40;
+    --bs-border-color: #333;
+}
+
+:root[data-bs-theme="dark"] .navbar.bg-dark {
+    background-color: var(--spotify-black) !important;
+    border-bottom: 1px solid #282828;
+}
+
+:root[data-bs-theme="dark"] .card {
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-bs-theme="dark"] .search-result-card:hover,
+:root[data-bs-theme="dark"] .device-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+}
+
+:root[data-bs-theme="dark"] .device-card.active {
+    background-color: rgba(29, 185, 84, 0.18);
+}
+
+:root[data-bs-theme="dark"] .alert-danger {
+    background-color: rgba(220, 53, 69, 0.18);
+    color: #f1aeb5;
+}
+
+:root[data-bs-theme="dark"] .alert-success {
+    background-color: rgba(29, 185, 84, 0.18);
+    color: #75d9a0;
+}
+
+:root[data-bs-theme="dark"] .alert-info {
+    background-color: rgba(13, 202, 240, 0.15);
+    color: #6edff6;
+}
+
+:root[data-bs-theme="dark"] .tooltip-inner {
+    background-color: #3a3a3a;
+}
+
+:root[data-bs-theme="dark"] .bs-tooltip-top .tooltip-arrow::before,
+:root[data-bs-theme="dark"] .bs-tooltip-auto[x-placement^="top"] .tooltip-arrow::before {
+    border-top-color: #3a3a3a;
+}
+
+:root[data-bs-theme="dark"] .btn-outline-dark {
+    --bs-btn-color: #e9ecef;
+    --bs-btn-border-color: #6c757d;
+    --bs-btn-hover-color: #121212;
+    --bs-btn-hover-bg: #e9ecef;
+    --bs-btn-hover-border-color: #e9ecef;
+    --bs-btn-active-color: #121212;
+    --bs-btn-active-bg: #e9ecef;
+    --bs-btn-active-border-color: #e9ecef;
+}
+
+:root[data-bs-theme="dark"] .pagination .page-link {
+    background-color: var(--bs-tertiary-bg);
+}
+
+:root[data-bs-theme="dark"] .pagination .page-item.disabled .page-link {
+    background-color: var(--bs-tertiary-bg);
+}
+
+/* Dark mode: Bootstrap 5.3.2 keeps outline buttons on their light-theme colors, so re-tint them */
+:root[data-bs-theme="dark"] .btn-outline-secondary {
+    --bs-btn-color: #c4c9ce;
+    --bs-btn-border-color: #8a9299;
+    --bs-btn-hover-color: #121212;
+    --bs-btn-hover-bg: #c4c9ce;
+    --bs-btn-hover-border-color: #c4c9ce;
+    --bs-btn-active-color: #121212;
+    --bs-btn-active-bg: #c4c9ce;
+    --bs-btn-active-border-color: #c4c9ce;
+    --bs-btn-disabled-color: #6c757d;
+    --bs-btn-disabled-border-color: #495057;
+}
+
+:root[data-bs-theme="dark"] .btn-outline-success {
+    --bs-btn-color: #1ed760;
+    --bs-btn-border-color: #1db954;
+    --bs-btn-hover-color: #121212;
+    --bs-btn-hover-bg: #1db954;
+    --bs-btn-hover-border-color: #1db954;
+    --bs-btn-active-color: #121212;
+    --bs-btn-active-bg: #1ed760;
+    --bs-btn-active-border-color: #1ed760;
+}
+
+:root[data-bs-theme="dark"] .btn-outline-danger {
+    --bs-btn-color: #ea868f;
+    --bs-btn-border-color: #dc3545;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #dc3545;
+    --bs-btn-hover-border-color: #dc3545;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #dc3545;
+    --bs-btn-active-border-color: #dc3545;
+}
+
+:root[data-bs-theme="dark"] .list-group-item,
+:root[data-bs-theme="dark"] .form-control,
+:root[data-bs-theme="dark"] .form-select {
+    border-color: #3a3a3a;
 }

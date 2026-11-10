@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotify Wrapper</title>
+
+    <!-- Theme: follow the device (OS/browser) light/dark setting, set before CSS to avoid a flash -->
+    <meta name="color-scheme" content="light dark">
+    <script>
+        (function () {
+            var mq = window.matchMedia('(prefers-color-scheme: dark)');
+            var apply = function () {
+                document.documentElement.setAttribute('data-bs-theme', mq.matches ? 'dark' : 'light');
+            };
+            apply();
+            if (mq.addEventListener) { mq.addEventListener('change', apply); }
+            else if (mq.addListener) { mq.addListener(apply); }
+        })();
+    </script>
     
     <!-- jQuery and Bootstrap -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
