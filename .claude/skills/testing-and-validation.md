@@ -20,3 +20,4 @@ Validate functional changes quickly and safely.
 - For polling changes: verify polling is paused while tab is inactive, immediate reload happens on tab activation, and timer/listener cleanup is correct.
 - For devices changes: verify empty-state render when no active device exists.
 - For devices polling changes: verify no `getDevices` calls while tab is inactive and immediate refresh when tab becomes active.
+- For UI changes: check both light and dark device themes (toggle OS appearance), keyboard-only use (Tab, arrow keys on sidebar tabs, focus visible on hover-revealed actions), and re-run the a11y audit (contrast, headings, landmarks, live regions).

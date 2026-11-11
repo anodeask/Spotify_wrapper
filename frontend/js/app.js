@@ -16,6 +16,7 @@ const App = {
     bindEvents() {
         // Tab navigation
         $('[data-tab]').on('click', this.handleTabSwitch.bind(this));
+        $('[role="tablist"]').on('keydown', '[data-tab]', this.handleTabKeydown.bind(this));
         
         // Global error handling for AJAX requests
         $(document).ajaxError(this.handleAjaxError.bind(this));
@@ -77,14 +78,34 @@ const App = {
         }
     },
     
+    // Arrow/Home/End keyboard navigation for the sidebar tablist (WAI-ARIA tabs pattern)
+    handleTabKeydown(e) {
+        const keys = ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'];
+        if (!keys.includes(e.key)) return;
+
+        const $tabs = $(e.delegateTarget).find('[data-tab]');
+        const count = $tabs.length;
+        let index = $tabs.index(e.currentTarget);
+
+        if (e.key === 'Home') index = 0;
+        else if (e.key === 'End') index = count - 1;
+        else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') index = (index + 1) % count;
+        else index = (index - 1 + count) % count;
+
+        e.preventDefault();
+        const $next = $tabs.eq(index);
+        $next.trigger('focus');
+        this.switchTab($next.data('tab'), { keepFocus: true });
+    },
+
     // Switch to a specific tab
-    switchTab(tab) {
+    switchTab(tab, { keepFocus = false } = {}) {
         // Handle deactivation of previous tab
         this.handleTabDeactivation(this.currentTab);
         
         // Update active link
-        $('[data-tab]').removeClass('active').attr('aria-selected', 'false');
-        $(`[data-tab="${tab}"]`).addClass('active').attr('aria-selected', 'true');
+        $('[data-tab]').removeClass('active').attr({ 'aria-selected': 'false', tabindex: '-1' });
+        $(`[data-tab="${tab}"]`).addClass('active').attr({ 'aria-selected': 'true', tabindex: '0' });
         
         // Hide all elements with type="lhs_option"
 
@@ -96,7 +117,7 @@ const App = {
         
         // Move focus to the new tab panel without forcing the page to scroll.
         const tabPanelElement = tabPanel.attr('tabindex', '-1').get(0);
-        if (tabPanelElement && typeof tabPanelElement.focus === 'function') {
+        if (!keepFocus && tabPanelElement && typeof tabPanelElement.focus === 'function') {
             tabPanelElement.focus({ preventScroll: true });
         }
         

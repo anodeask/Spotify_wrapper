@@ -40,11 +40,17 @@ body {
 }
 
 .btn-success {
+    --bs-btn-color: #000;
+    --bs-btn-hover-color: #000;
+    --bs-btn-active-color: #000;
+    --bs-btn-disabled-color: #000;
+    color: #000;
     background-color: var(--spotify-green);
     border-color: var(--spotify-green);
 }
 
 .btn-success:hover {
+    color: #000;
     background-color: #1ed760;
     border-color: #1ed760;
 }
@@ -58,6 +64,7 @@ body {
 }
 
 .list-group-item-action.active {
+    color: #000;
     background-color: var(--spotify-green);
     border-color: var(--spotify-green);
 }
@@ -99,7 +106,9 @@ body {
     gap: 0.35rem;
 }
 
-.search-result-card:hover .track-actions {
+.search-result-card:hover .track-actions,
+.search-result-card:focus-within .track-actions,
+.track-actions:focus-within {
     opacity: 1;
 }
 
@@ -343,7 +352,7 @@ body {
 .pagination .page-item.active .page-link {
     background-color: var(--spotify-green);
     border-color: var(--spotify-green);
-    color: white;
+    color: #000;
 }
 
 .pagination .page-link:hover {
@@ -505,4 +514,9 @@ body {
 :root[data-bs-theme="dark"] .form-control,
 :root[data-bs-theme="dark"] .form-select {
     border-color: #3a3a3a;
+}
+
+/* Dark mode: Bootstrap's secondary link grey (#6c757d) is only 3.5:1 on dark cards */
+:root[data-bs-theme="dark"] .link-secondary {
+    color: #adb5bd !important;
 }

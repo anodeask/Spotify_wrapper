@@ -208,7 +208,7 @@ const SearchModule = {
         return `
             <div class="col-12 mt-2 mb-3">
                 <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
-                    <h4 class="mb-0">${title}</h4>
+                    <h3 class="h4 mb-0">${title}</h3>
                     <span class="text-muted small">${validItems.length} result${validItems.length === 1 ? '' : 's'}</span>
                 </div>
                 <div class="row">

@@ -305,6 +305,18 @@ const Config = {
 
 ## 📝 Recent Changes
 
+### November 11, 2026
+
+**Dark mode (follows device setting) and accessibility pass**
+
+- **Theme:** an inline script in `frontend/index.html` `<head>` sets Bootstrap's `data-bs-theme` from `prefers-color-scheme` before CSS loads (no flash) and live-updates on OS change. No manual toggle by design. Dark overrides live at the end of `frontend/css/styles.css` under `:root[data-bs-theme="dark"]` (page/card/navbar colors, alerts, tooltips, pagination, `btn-outline-*` re-tints, `.link-secondary`). Light mode is unchanged.
+- **Contrast:** `.btn-success`, active `.list-group-item-action` and active pagination use black text on Spotify green (white on `#1db954` is only ~2.6:1). In dark mode `.link-secondary` is `#adb5bd`.
+- **Landmarks/headings:** dashboard and login content are wrapped in `<main>`; a visually hidden `<h1>` exists on the dashboard and the login title is an `<h1>`. Tab titles are `<h2 class="h3">`; template card titles are `<h3 class="h6">`; Search tab has a visually hidden `<h2>`.
+- **Tabs:** sidebar tabs have ids (`tab-player`, ...), panels use `aria-labelledby="tab-<name>"`, roving `tabindex`, and `App.handleTabKeydown` adds Arrow/Home/End navigation (`switchTab(tab, { keepFocus })` keeps focus on the tab while arrowing). `#libraryTabs` has `aria-label`.
+- **Live regions/dialogs:** static `#global-error` (`role="alert"`) and `#global-success` (`role="status"`) containers in `index.html` (JS still creates them only if missing). Both modals have `role="dialog"` and valid `aria-labelledby`.
+- **Keyboard:** `.track-actions` reveal also on `:focus-within`.
+- **Files:** `frontend/index.html`, `frontend/css/styles.css`, `frontend/js/app.js`, `frontend/js/search.js`.
+
 ### July 7, 2026
 
 #### Devices Empty-State Handling (No Active Devices)

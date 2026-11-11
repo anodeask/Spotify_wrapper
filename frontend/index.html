@@ -43,7 +43,7 @@
     </div>
 
     <!-- Login Page -->
-    <div id="login-page" class="container-fluid d-none">
+    <main id="login-page" class="container-fluid d-none">
         <div class="row justify-content-center align-items-center min-vh-100">
             <div class="col-md-6 col-lg-4">
                 <div class="card shadow-lg">
@@ -51,7 +51,7 @@
                         <div class="mb-4">
                             <i class="fab fa-spotify display-1 text-success"></i>
                         </div>
-                        <h2 class="card-title mb-3">Spotify Wrapper</h2>
+                        <h1 class="card-title h2 mb-3">Spotify Wrapper</h1>
                         <p class="text-muted mb-4">Connect your Spotify account to search playlists, songs, and control playback on your devices.</p>
                         
                         <div id="login-error" class="alert alert-danger d-none" role="alert">
@@ -74,7 +74,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Dashboard Page -->
     <div id="dashboard-page" class="d-none">
@@ -102,22 +102,23 @@
         </nav>
 
         <!-- Main Content -->
-        <div class="container-fluid mt-4">
+        <main class="container-fluid mt-4">
+            <h1 class="visually-hidden">Spotify Wrapper</h1>
             <div class="row">
                 <!-- Sidebar -->
                 <div class="col-md-3 col-lg-2">
-                    <div class="list-group" role="tablist" aria-label="Main navigation">
-                        <a href="#" class="list-group-item list-group-item-action active" data-tab="player" role="tab" aria-selected="true" aria-controls="player-tab">
+                    <div class="list-group" role="tablist" aria-orientation="vertical" aria-label="Main navigation">
+                        <a href="#" class="list-group-item list-group-item-action active" id="tab-player" data-tab="player" role="tab" aria-selected="true" aria-controls="player-tab" tabindex="0">
                             <i class="fas fa-play me-2"></i>Player
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-tab="search" role="tab" aria-selected="false" aria-controls="search-tab">
+                        <a href="#" class="list-group-item list-group-item-action" id="tab-search" data-tab="search" role="tab" aria-selected="false" aria-controls="search-tab" tabindex="-1">
                             <i class="fas fa-search me-2"></i>Search
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-tab="library" role="tab" aria-selected="false" aria-controls="library-tab">
+                        <a href="#" class="list-group-item list-group-item-action" id="tab-library" data-tab="library" role="tab" aria-selected="false" aria-controls="library-tab" tabindex="-1">
                             <i class="fas fa-book me-2"></i>My Library
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-tab="devices" role="tab" aria-selected="false" aria-controls="devices-tab">
-                            <i class="fas fa-devices me-2"></i>Devices
+                        <a href="#" class="list-group-item list-group-item-action" id="tab-devices" data-tab="devices" role="tab" aria-selected="false" aria-controls="devices-tab" tabindex="-1">
+                            <i class="fas fa-desktop me-2" aria-hidden="true"></i>Devices
                         </a>
                     </div>
                 </div>
@@ -125,7 +126,8 @@
                 <!-- Content Area -->
                 <div class="col-md-9 col-lg-10">
                     <!-- Search Tab -->
-                    <div id="search-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="search">
+                    <div id="search-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="tab-search">
+                        <h2 class="visually-hidden">Search</h2>
                         <div class="row mb-4">
                             <div class="col-md-8">
                                 <div class="input-group">
@@ -163,13 +165,13 @@
                     </div>
 
                     <!-- Library Tab -->
-                    <div id="library-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="library">
-                        <h3 class="mb-4">
+                    <div id="library-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="tab-library">
+                        <h2 class="h3 mb-4">
                             <i class="fas fa-book me-2"></i>My Library
-                        </h3>
+                        </h2>
                         
                         <!-- Library Sub-tabs -->
-                        <ul class="nav nav-tabs mb-4" id="libraryTabs" role="tablist">
+                        <ul class="nav nav-tabs mb-4" id="libraryTabs" role="tablist" aria-label="Library sections">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="recently-played-tab-btn" data-bs-toggle="tab" data-bs-target="#recently-played-content" type="button" role="tab">
                                     <i class="fas fa-history me-1"></i>Recently Played
@@ -266,10 +268,10 @@
                         </div>
                     </div>
 
-                     <div id="devices-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="devices">
-                <h3 class="mb-4">
-                    <i class="fas fa-devices me-2"></i>Available Devices
-                </h3>
+                     <div id="devices-tab" type="lhs_option" class="tab-content d-none" role="tabpanel" aria-labelledby="tab-devices">
+                <h2 class="h3 mb-4">
+                    <i class="fas fa-desktop me-2" aria-hidden="true"></i>Available Devices
+                </h2>
                 <div id="devices-list" class="row">
                     <div class="col-12 text-center text-muted">
                         <i class="fas fa-devices display-4 mb-3"></i>
@@ -282,10 +284,10 @@
             </div>
 
             <!-- Player Tab -->
-            <div id="player-tab" type="lhs_option" class="tab-content" role="tabpanel" aria-labelledby="player">
-                <h3 class="mb-4">
+            <div id="player-tab" type="lhs_option" class="tab-content" role="tabpanel" aria-labelledby="tab-player">
+                <h2 class="h3 mb-4">
                     <i class="fas fa-play me-2"></i>Now Playing
-                </h3>
+                </h2>
                 <div id="current-track" class="card">
                     <div class="card-body text-center">
                         <div id="no-track" class="text-muted">
@@ -294,7 +296,7 @@
                         </div>
                         <div id="track-info" class="d-none">
                             <img id="track-image" src="" alt="Album Cover" class="rounded mb-3" style="max-width: 200px;">
-                            <h4 id="track-name">Track Name</h4>
+                            <h3 class="h4" id="track-name">Track Name</h3>
                             <p id="track-artist" class="text-muted" style="cursor: pointer;">Artist Name</p>
                             <div class="d-flex align-items-center mb-3">
                                 <span id="track-current-time" class="text-muted small me-2">0:00</span>
@@ -374,7 +376,7 @@
                 </div>
             </div>
 
-        </div>
+        </main>
     </div>
                    
            
@@ -393,7 +395,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 30}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 30}}</h3>
                             <p class="text-muted mb-1 small">{{{artistLinks}}}</p>
                             <p class="text-muted mb-2 small">{{truncate albumName 25}}</p>
                             <div class="track-actions">
@@ -440,7 +442,7 @@
                 <div class="card-body text-center">
                     <img src="{{imageUrl}}" alt="{{name}}" 
                          class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">
-                    <h6 class="card-title">{{truncate name 25}}</h6>
+                    <h3 class="h6 card-title">{{truncate name 25}}</h3>
                     <p class="text-muted small">{{followers}}</p>
                     <div class="mt-2">
                         {{#each genres}}
@@ -460,7 +462,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 25}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 25}}</h3>
                             <p class="text-muted mb-1 small">{{{artistLinks}}}</p>
                             <p class="text-muted mb-2 small">{{releaseYear}} • {{totalTracks}} tracks</p>
                             <div class="track-actions album-track-actions">
@@ -508,7 +510,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 25}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 25}}</h3>
                             <p class="text-muted mb-1 small">by {{truncate owner 20}}</p>
                             <p class="text-muted mb-2 small">{{totalTracks}} tracks</p>
                             <div class="track-actions">
@@ -535,7 +537,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 25}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 25}}</h3>
                             <p class="text-muted mb-1 small">{{truncate publisher 25}}</p>
                             <p class="text-muted mb-2 small">{{totalEpisodes}} episodes</p>
                             <div class="track-actions">
@@ -570,7 +572,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 30}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 30}}</h3>
                             <p class="text-muted mb-1 small">{{truncate publisher 28}}</p>
                             <p class="text-muted mb-2 small">{{totalEpisodes}} episodes</p>
                             <div class="track-actions mt-2">
@@ -605,7 +607,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{episodeName}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1 overflow-hidden">
-                            <h6 class="card-title mb-1 text-truncate">{{episodeName}}</h6>
+                            <h3 class="h6 card-title mb-1 text-truncate">{{episodeName}}</h3>
                             <p class="text-muted mb-1 small text-truncate">{{showName}}</p>
                             <p class="text-muted mb-2 small text-truncate">{{publisher}}{{#if releaseDate}} • Released {{releaseDate}}{{/if}}{{#if addedAtLabel}} • Saved {{addedAtLabel}}{{/if}}</p>
 
@@ -738,7 +740,7 @@
                             <i class="{{deviceIcon}} fa-2x text-primary"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{deviceName}}</h6>
+                            <h3 class="h6 card-title mb-1">{{deviceName}}</h3>
                             <div class="d-flex align-items-center">
                                 <span class="{{statusClass}}"></span>
                                 <small class="text-muted">{{statusLabel}}</small>
@@ -785,7 +787,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 25}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 25}}</h3>
                             <p class="text-muted mb-1 small">{{totalTracks}} tracks</p>
                             <div class="track-actions mt-2">
                                 <button class="btn btn-success btn-sm play-playlist-btn" 
@@ -811,7 +813,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 30}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 30}}</h3>
                             <p class="text-muted mb-1 small">{{{artistLinks}}}</p>
                             <p class="text-muted mb-2 small">{{truncate albumName 25}}</p>
                             <div class="track-actions">
@@ -857,7 +859,7 @@
                     <div class="d-flex">
                         <img src="{{imageUrl}}" alt="{{name}}" class="search-result-image rounded me-3">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">{{truncate name 30}}</h6>
+                            <h3 class="h6 card-title mb-1">{{truncate name 30}}</h3>
                             <p class="text-muted mb-1 small">{{{artistLinks}}}</p>
                             <p class="text-muted mb-2 small"><i class="fas fa-clock me-1"></i>{{playedAt}}</p>
                             <div class="track-actions">
@@ -1026,7 +1028,7 @@
     </script>
 
     <!-- Detail View Modal -->
-    <div class="modal fade" id="detail-modal" tabindex="-1" aria-labelledby="detail-modal-label" aria-hidden="true">
+    <div class="modal fade" id="detail-modal" tabindex="-1" role="dialog" aria-labelledby="detail-modal-title" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1061,7 +1063,7 @@
     </div>
 
     <!-- Podcast Episodes Modal -->
-    <div class="modal fade" id="podcast-episodes-modal" tabindex="-1" aria-labelledby="podcast-episodes-modal-label" aria-hidden="true">
+    <div class="modal fade" id="podcast-episodes-modal" tabindex="-1" role="dialog" aria-labelledby="podcast-episodes-modal-label" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1093,6 +1095,10 @@
     </div>
 
     <!-- Custom JavaScript -->
+    <!-- Live regions for global alerts (populated by Config/App) -->
+    <div id="global-error" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 9999; margin-top: 1rem;" role="alert" aria-live="assertive"></div>
+    <div id="global-success" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 9999; margin-top: 1rem;" role="status" aria-live="polite"></div>
+
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/spotify.js"></script>
